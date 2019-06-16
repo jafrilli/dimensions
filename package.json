@@ -1,0 +1,14 @@
+{
+  "name": "dimensions",
+  "version": "1.0.0",
+  "description": "Official Discord Bot for the Dimensions™ server!",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jafar Ali",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^11.5.1"
+  }
+}
