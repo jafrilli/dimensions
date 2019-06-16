@@ -4,7 +4,8 @@ const fs = require("fs");
 const client = new Discord.Client();
 
 client.commands = new Discord.Collection();
-// add env., add fs system, add db and start working with the algorithms on how the role system will work...
+
+// add db and start working with the algorithms on how the role system will work...
 
 fs.readdir("./commands/", (err, files) => {
     if(err) {
