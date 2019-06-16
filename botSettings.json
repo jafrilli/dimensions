@@ -2,7 +2,7 @@
     "token": "NTc1NDUzMzA3Mjk2ODA4OTkw.XNILVA.aKijyVglFyb5q_pb2TPoOOUajIc",
     "prefix": ">",
     "activity": {
-        "action": "WATCHING",
+        "type": "WATCHING",
         "description": "hoomans™ teleport..."
     }
 }
