@@ -5,7 +5,8 @@ const client = new Discord.Client();
 
 client.commands = new Discord.Collection();
 
-// add db and start working with the algorithms on how the role system will work...
+// 1. ADD EVENT HANDLER SYSTEM LIKE WHAT NERD DID
+// 2. GET STARTED ON DATABASE
 
 fs.readdir("./commands/", (err, files) => {
     if(err) {
@@ -38,7 +39,7 @@ client.on("ready", async () => {
     console.log("=================== READY END ===================")
 })
 
-client.on("message", (msg) => {
+client.on("message", async (msg) => {
     if(msg.author.bot) return;
     if(!msg.content.startsWith(botSettings.prefix)) return;
     
