@@ -5,15 +5,15 @@ const client = new Discord.Client();
 
 client.commands = new Discord.Collection();
 
-// 1. ADD EVENT HANDLER SYSTEM LIKE WHAT NERD DID
-// 2. GET STARTED ON DATABASE
+// 1. ADD EVENT HANDLER SYSTEM LIKE WHAT NERD DID (DONE)
+// 2. GET STARTED ON DATABASE 
 
 fs.readdir("./commands/", (err, files) => {
     if(err) {
         console.log("ERROR READING ./commands/ PATH");
         return;
     };
-    console.log(files);
+    // console.log(files);
     console.log(`Found ${files.length} file(s)!`);
     files.forEach((file) => {
         if(!file.endsWith(".js")) return;
@@ -24,32 +24,18 @@ fs.readdir("./commands/", (err, files) => {
     })
 })
 
-client.on("ready", async () => {
-    console.log("================== READY START ==================")
-    
-    // logged in
-    console.log(`Logged in as ${client.user.username}!`);
-    // generate invite
-    var invite = await client.generateInvite(["ADMINISTRATOR"]);
-    console.log(invite);
-    // set bot user activity
-    await client.user.setActivity(botSettings.activity.description, {type: botSettings.activity.type})
-    console.log(`Set activity to \"${botSettings.activity.type} ${botSettings.activity.description}\"`)
-
-    console.log("=================== READY END ===================")
-})
-
-client.on("message", async (msg) => {
-    if(msg.author.bot) return;
-    if(!msg.content.startsWith(botSettings.prefix)) return;
-    
-    var command = msg.content.substring(1).split(" ")[0];
-    var args = msg.content.substring(1).split(" ").slice(1);
-
-    let cmd = client.commands.get(command);
-    if(!cmd) return;
-    cmd.run(msg, client, args);
-
+fs.readdir("./events/", (err, files) => {
+    if(err) {
+        console.log("ERROR READING ./events/ PATH");
+        return;
+    };
+    console.log(`\nFound ${files.length} event(s)!`)
+    files.forEach((file) => {
+        if(!file.endsWith(".js")) return;
+        var event = require(`./events/${file}`);
+        client.on(event.help.name, event.run.bind(null, client));
+        console.log(`Setup response for the \'${event.help.name}\' event!`)
+    })
 })
 
 client.login(botSettings.token);
