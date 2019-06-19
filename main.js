@@ -1,12 +1,16 @@
 const Discord = require("discord.js");
 const botSettings = require("./botSettings.json");
 const fs = require("fs");
+const mongoose = require("mongoose");
 const client = new Discord.Client();
 
 client.commands = new Discord.Collection();
 
+mongoose.connect('mongodb://localhost:27017/dimensionsDB', { useNewUrlParser: true }).then(console.log("\nSUCCESSFULLY CONNECTED TO MONGO DB"));
+
 // 1. ADD EVENT HANDLER SYSTEM LIKE WHAT NERD DID (DONE)
-// 2. GET STARTED ON DATABASE 
+// 2. GET STARTED ON DATABASE (DONE)
+// 3. CREATE THE "CREATE DATABASE" SEQUENCE
 
 fs.readdir("./commands/", (err, files) => {
     if(err) {
