@@ -130,8 +130,10 @@ async function dimensionCreate(msg, client, args) {
 
 async function dimensionDelete(msg, client, args) {
     
-    var allDimensions;
-    var dimensionIDs = [];
+    const embed = new RichEmbed()
+
+    var allDimensions = {};
+    // will be structured like this { "nameOfRole": "idOfRole", "nameOfRole": "idOfRole", etc... }
     // 1. connect to the db, get all dimensions
     await Dimension.find({}, {name: 1}, (err, docs) => {
         if(err) {
@@ -139,25 +141,26 @@ async function dimensionDelete(msg, client, args) {
             return;
         }
         if(docs) {
-            allDimensions = docs
+            docs.forEach((doc) => {
+                allDimensions[doc.name] = doc["_id"];
+                embed.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
+            })
+
         }
     })
 
-    // 2. rich embed (mention role using <$&>) with fields
-    var embed = new RichEmbed({
-        title: "__**Dimension™ List**__",
-        color: converter.hexToDec("0xDB3BFE"),
-    })
-    allDimensions.forEach((doc) => {
-        embed.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
-        dimensionIDs.push(doc["_id"]);
-    })
+    // 2. set variables for rich embed (mention role using <$&>) with fields
+    embed.setTitle("__**Dimension™ List**__");
+    //embed.setColor(converter.hexToDec("0xDB3BFE"));
+    
+    // 3. ask/send embed, and wait for appropriate answer
     var deleteAttempted = false;
     do {
+        var condition = false;
         // description
-        var dimensionDeleteMessage = "Mention the role **(ONLY ONE)** of the dimension from this list you want to delete, or type \'quit\' to stop this process:";
+        var dimensionDeleteMessage = "Type the **exact** name of the dimension from this list you want to delete, or type \'quit\' to stop this process:";
         if(deleteAttempted) {
-            dimensionDeleteMessage = "Incorrect response! Response must be a mention of one of the dimensions on this list! Try again, or type \'quit\' to stop this process:"
+            dimensionDeleteMessage = "Incorrect response! Response must be the exact name of one of the dimensions on this list! Try again, or type \'quit\' to stop this process:"
         }
         embed.setDescription(dimensionDeleteMessage);
 
@@ -168,11 +171,12 @@ async function dimensionDelete(msg, client, args) {
             console.log("ERROR AWAITING DIMENSION ROLE TO DELETE IN DIMENSIONDELETE: \n" + err)
         }
         if(dimensionToDelete.first().content === "quit") { msg.channel.send("You quit the dimensions™ delete wizard."); return }
+        
         deleteAttempted = true;
+    } while (!Object.keys(allDimensions).includes(dimensionToDelete.first().content))
+    var selectedDimensionID = allDimensions[dimensionToDelete.first().content];
 
-    } while (!dimensionToDelete.first().mentions.roles.first().id || !dimensionIDs.includes(dimensionToDelete.first().mentions.roles.first().id));
-    var selectedDimensionID = dimensionToDelete.first().mentions.roles.first().id;
-
+    // 4. confirm action
     var confirmAttempted = false
     do {
         var confirmMessage = `Are you sure you want to delete the <@&${selectedDimensionID}> dimension? Type \'confirm\' to confirm this action. Otherwise, type \'quit\' to quit this process.`
@@ -187,6 +191,7 @@ async function dimensionDelete(msg, client, args) {
         confirmAttempted = true;
     } while (confirmation.first().content.toLowerCase() != "confirm")
 
+    // 5. delete dimension using its id
     Dimension.findByIdAndDelete(selectedDimensionID, (err, doc) => {
         if(err) {
             console.log("ERROR DELETING DIMENSION BY ID (MONGOOSE/MONGODB ERROR): \m" + err);
