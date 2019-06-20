@@ -10,6 +10,9 @@ module.exports.run = async (msg, client, args) => {
         case "delete":
             dimensionDelete(msg, client, args);
             break;
+        case "list": 
+            dimensionList(msg, client, args);
+            break;
         default:
             msg.channel.send(`That was an invalid argument. Try again dumbass <@${msg.author.id}>`)
             return;
@@ -27,7 +30,7 @@ async function dimensionCreate(msg, client, args) {
 
     // Set Title:
     do {
-        await msg.channel.send(new RichEmbed({title: "New Dimension: Name", description: "Enter the \'name\' of the new dimension you wish to create:", footer: "Type \'quit\' to quit wizard anytime..."}))
+        await msg.channel.send(new RichEmbed({title: "__**New Dimension™: Name**__", description: "Enter the \'name\' of the new dimension you wish to create:", footer: "Type \'quit\' to quit wizard anytime..."}))
         try {
             var dimensionTitle = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
         } catch(err) {
@@ -39,7 +42,7 @@ async function dimensionCreate(msg, client, args) {
 
     // Set Description: 
     do {
-        await msg.channel.send(new RichEmbed({title: "New Dimension: Description", description: "Enter the \'description\' of the new dimension you wish to create:", footer: "Type \'quit\' to quit wizard anytime..."}))
+        await msg.channel.send(new RichEmbed({title: "__**New Dimension™: Description**__", description: "Enter the \'description\' of the new dimension you wish to create:", footer: "Type \'quit\' to quit wizard anytime..."}))
         try {
             var dimensionDescription = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
         } catch(err) {
@@ -54,7 +57,7 @@ async function dimensionCreate(msg, client, args) {
     do {
         var roleSetupMessage = "Enter the official dimension \'role\' of the new dimension you wish to create:";
         if(roleAttempted) {roleSetupMessage = "Your response has to be a single, mentioned __role__ dumbass. If you can't do it, then type \'quit\' to exit the setup wizard."};
-        await msg.channel.send(new RichEmbed({title: "New Dimension: Role", description: roleSetupMessage, footer: "Type \'quit\' to quit wizard anytime..."}))
+        await msg.channel.send(new RichEmbed({title: "__**New Dimension™: Role**__", description: roleSetupMessage, footer: "Type \'quit\' to quit wizard anytime..."}))
         try {
             var dimensionRole = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
         } catch(err) {
@@ -70,7 +73,7 @@ async function dimensionCreate(msg, client, args) {
     do {
         var colorSetupMessage = "Enter the hex \'color\' of the new dimension IN THIS FORMAT: \'#000000\'";
         if(colorAttempted) {colorSetupMessage = "You need to add the hashtag (#), plus 6 digits. Try Again."}
-        await msg.channel.send(new RichEmbed({title: "New Dimension: Color", description: colorSetupMessage, footer: "Type \'quit\' to quit wizard anytime..."}))
+        await msg.channel.send(new RichEmbed({title: "__**New Dimension™: Color**__", description: colorSetupMessage, footer: "Type \'quit\' to quit wizard anytime..."}))
         try {
             var dimensionColor = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
         } catch(err) {
@@ -84,7 +87,7 @@ async function dimensionCreate(msg, client, args) {
 
     // Set Emoji: 
     do {
-        await msg.channel.send(new RichEmbed({title: "New Dimension: Emoji", description: "Enter the unicode \'emoji\' of the new dimension you wish to create:", color: theDimensionColor, footer: "Type \'quit\' to quit wizard anytime..."}))
+        await msg.channel.send(new RichEmbed({title: "__**New Dimension™: Emoji**__", description: "Enter the unicode \'emoji\' of the new dimension you wish to create. HAS TO BE AN ORIGINAL UNICODE EMOJI (no discord emotes):", color: theDimensionColor, footer: "Type \'quit\' to quit wizard anytime..."}))
         try {
             var dimensionEmoji = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
         } catch(err) {
@@ -150,7 +153,7 @@ async function dimensionDelete(msg, client, args) {
     })
 
     // 2. set variables for rich embed (mention role using <$&>) with fields
-    embed.setTitle("__**Dimension™ List**__");
+    embed.setTitle("__**Dimension™ Delete Wizard**__");
     //embed.setColor(converter.hexToDec("0xDB3BFE"));
     
     // 3. ask/send embed, and wait for appropriate answer
@@ -158,7 +161,7 @@ async function dimensionDelete(msg, client, args) {
     do {
         var condition = false;
         // description
-        var dimensionDeleteMessage = "Type the **exact** name of the dimension from this list you want to delete, or type \'quit\' to stop this process:";
+        var dimensionDeleteMessage = "Type the __**exact name**__ (white text above the role) of the dimension from this list you want to delete, or type \'quit\' to stop this process:";
         if(deleteAttempted) {
             dimensionDeleteMessage = "Incorrect response! Response must be the exact name of one of the dimensions on this list! Try again, or type \'quit\' to stop this process:"
         }
@@ -199,4 +202,26 @@ async function dimensionDelete(msg, client, args) {
         }
         msg.channel.send(`Successfully deleted the ${doc.name} dimension™ from the database, along with its roles!`);
     })
+}
+
+async function dimensionList(msg, client, args) {
+    
+    const embed = new RichEmbed();
+    embed.setTitle("__**Dimension™ List**__");
+    embed.setDescription("Here's a list of all the existing dimensions. Type \'>dimension create\' to create a dimension, and type \'>dimension delete\' to delete one.")
+
+    await Dimension.find({}, {name: 1}, (err, docs) => {
+        if(err) {
+            console.log("ERROR RETRIEVING DIMENSION DATA FOR DIMENSIONLIST FUNCTION: \n" + err)
+            return;
+        }
+        if(docs) {
+            docs.forEach(doc => {
+                embed.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
+            })
+        }
+    })
+
+    await msg.channel.send(embed);
+
 }
