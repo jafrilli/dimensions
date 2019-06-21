@@ -33,12 +33,17 @@ module.exports.run = async (msg, client, args) => {
             await dimensionUpdate(msg, client, args);
             removedID();
             break;
-        case 'oioioi':
-            functions.dimension.details('591485901113131008', msg);
+        case 'details':
+            await dimensionDetails(msg, client, args);
+            removedID()
+            break;
+        case 'help':
+            await dimensionHelp(msg, client, args);
             removedID()
             break;
         default:
-            msg.channel.send(`That was an invalid argument. Try again dumbass <@${msg.author.id}>`)
+            await msg.channel.send(`That was an invalid argument. Try again dumbass <@${msg.author.id}>`)
+            removedID();
             return;
     }
 }
@@ -240,9 +245,7 @@ async function dimensionDelete(msg, client, args) {
     
     // 3. ask/send embed, and wait for appropriate answer
     var deleteAttempted = false;
-    do {
-        var condition = false;
-        // description
+    do {        // description
         var dimensionDeleteMessage = "Type the __**exact name**__ (white text above the role) of the dimension from this list you want to delete, or type \'quit\' to stop this process:";
         if(deleteAttempted) {
             dimensionDeleteMessage = "Incorrect response! Response must be the exact name of one of the dimensions on this list! Try again, or type \'quit\' to stop this process:"
@@ -310,6 +313,73 @@ async function dimensionList(msg, client, args) {
 
     await msg.channel.send(embed);
 
+}
+
+async function dimensionDetails(msg, client, args) {
+    
+    const embed = new RichEmbed()
+
+    var allDimensions = {};
+    // will be structured like this { "nameOfRole": "idOfRole", "nameOfRole": "idOfRole", etc... }
+    // 1. connect to the db, get all dimensions
+    await Dimension.find({}, {name: 1}, (err, docs) => {
+        if(err) {
+            console.log("ERROR TRYING TO RETRIEVE DIMENSIONS FOR DIMENSIONDETAILS(): \n" + err);
+            return;
+        }
+        if(docs) {
+            docs.forEach((doc) => {
+                allDimensions[doc.name] = doc["_id"];
+                embed.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
+            })
+
+        }
+    })
+
+    embed.setTitle("__**Dimension™ Details Wizard**__");
+
+    var viewDetailsAttempt = false;
+    do {        // description
+        var dimensionDetailsMessage = "Type the __**exact name**__ (white text above the role) of the dimension from this list you want to view in detail, or type \'quit\' to stop this process:";
+        if(viewDetailsAttempt) {
+            dimensionDetailsMessage = "Incorrect response! Response must be the exact name of one of the dimensions on this list! Try again, or type \'quit\' to stop this process:"
+        }
+        embed.setDescription(dimensionDetailsMessage);
+
+        await msg.channel.send(embed);
+        try {
+            var dimensionToView = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+        } catch(err) {
+            console.log("ERROR AWAITING DIMENSION ROLE TO DELETE IN DIMENSIONDELETE: \n" + err)
+        }
+        if(dimensionToView.first().content === "quit") { msg.channel.send("You quit the dimensions™ details wizard."); return }
+        
+        viewDetailsAttempt = true;
+    } while (!Object.keys(allDimensions).includes(dimensionToView.first().content))
+    var selectedDimensionID = allDimensions[dimensionToView.first().content];
+
+    await functions.dimension.detailedDetails(selectedDimensionID, msg);
+    await msg.channel.send("Here are the server's details <3");
+
+}
+// temporary, until we make a bigger, global (not just >dimension) help wizard ig
+async function dimensionHelp(msg, client, args) {
+    const embed = new RichEmbed({
+        title: "__**Dimension™ Help**__",
+        description: "All of these commands __do not__ need arguments (text after them). They are all setup wizards. Type \'quit\' at anytime during the setup wizard to cancel the process (EXCEPT IN THE EMOJI/REACT PHASE. STILL WORKING ON THAT).",
+        fields: [
+            {name: ">dimension create", value: "Takes you through a setup wizard that helps you make a dimension"},
+            {name: ">dimension update", value: "Takes you through a setup wizard that helps you update a dimension"},
+            {name: ">dimension delete", value: "Takes you through a setup wizard that helps you delete a dimension"},
+            {name: ">dimension details", value: "Takes you through a setup wizard that helps you get details on a dimension"},
+            {name: ">dimension list", value: "Lists all available dimensions"},
+            {name: ">dimension help", value: "Lists all available commands (this)"},
+
+        ]
+    });
+
+    await msg.channel.send(embed);
+    await msg.channel.send("Done :3")
 }
 
 async function createDimensionSequence(msg) {
@@ -388,10 +458,11 @@ async function createDimensionSequence(msg) {
     return newDimension;
 }
 
+
 var updateFunctions = {
     updateName: async (dimensionID, msg) => {
 
-        await msg.channel.send(new RichEmbed({title: `__**Update <@&${dimensionID}> Dimension™: Name**__`, description: "Enter the new \'name\' of the dimension you wish to update:", footer: "Type \'quit\' to quit wizard anytime..."}))
+        await msg.channel.send(new RichEmbed({title: `__**Update Dimension™: Name**__`, description: `Enter the new \'name\' of the <@&${dimensionID}> dimension:`, footer: "Type \'quit\' to quit wizard anytime..."}))
         try {
             var dimensionName = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
         } catch(err) {
