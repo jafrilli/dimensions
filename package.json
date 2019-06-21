@@ -11,6 +11,7 @@
   "dependencies": {
     "discord.js": "^11.5.1",
     "hex2dec": "^1.1.2",
+    "is-url": "^1.2.4",
     "mongoose": "^5.6.0"
   }
 }

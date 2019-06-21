@@ -7,8 +7,10 @@ const dimensionSchema = mongoose.Schema({
     color: Number,
     emoji: {
         url: String,
-        id: String
+        id: String,
+        name: String
     },
+    graphic: String,
     roles: Array
 })
 
