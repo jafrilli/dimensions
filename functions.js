@@ -1,8 +1,24 @@
 const { RichEmbed } = require("discord.js");
 const Dimension = require("./models/dimension.js");
-const isMediaURL = require("./tools/isMediaUrl.js");
+const isURL = require("is-url");
 
-module.exports = {
+async function isMediaURL(string) {
+    if(await !isURL(string)) return false;
+    if(!string.endsWith(".gif") && 
+        !string.endsWith(".jpg") && 
+        !string.endsWith(".png") && 
+        !string.endsWith(".jpeg") && 
+        !string.endsWith(".gif/") && 
+        !string.endsWith(".jpg/") && 
+        !string.endsWith(".png/") && 
+        !string.endsWith(".jpeg/")
+    ) {
+        return false;
+    }
+    return true;
+}
+
+module.exports.embed = {
     dimension: {
         // returns detailed RichEmbed of entered dimension™
         details: async (dimensionID, msg) => {
@@ -85,5 +101,8 @@ module.exports = {
             })
         }
     },
-    functionTwo: (msg, client, args) => {},
+}
+
+module.exports.toolkit = {
+    isMediaURL
 }
