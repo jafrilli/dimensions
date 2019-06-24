@@ -11,6 +11,7 @@ const dimensionSchema = mongoose.Schema({
         name: String
     },
     graphic: String,
+    bans: Array,
     roles: Array
 })
 

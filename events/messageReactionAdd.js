@@ -9,7 +9,7 @@ module.exports.run = async (client, reaction) => {
 
     // if(reaction.message.channel.id === botSettings.portal && reaction.message.embeds) {
 
-    if(reaction.message.embeds.length != 0) {
+    if(reaction.message.embeds.length != 0 && !reaction.message.author.bot) {
         if(reaction.message.embeds[0].fields.length != 0) {
             var fieldData = {};
             reaction.message.embeds[0].fields.forEach(field => {
