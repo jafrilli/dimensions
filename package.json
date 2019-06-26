@@ -9,6 +9,7 @@
   "author": "Jafar Ali",
   "license": "ISC",
   "dependencies": {
+    "css-color-checker": "^1.6.1",
     "discord.js": "^11.5.1",
     "hex2dec": "^1.1.2",
     "is-url": "^1.2.4",

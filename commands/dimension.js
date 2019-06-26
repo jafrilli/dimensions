@@ -1,4 +1,4 @@
-const { RichEmbed, Role } = require("discord.js");
+const { RichEmbed, Role, Collection } = require("discord.js");
 const Dimension = require("../models/dimension.js");
 const converter = require("hex2dec");
 const functions = require("../functions.js");
@@ -40,6 +40,10 @@ module.exports.run = async (msg, client, args) => {
             await dimensionHelp(msg, client, args);
             removedID()
             break;
+        case 'clearCache':
+            await clearCache(msg, client, args);
+            removedID()
+            break;
         default:
             await msg.channel.send(`That was an invalid argument. Try again dumbass <@${msg.author.id}>`)
             removedID();
@@ -51,12 +55,17 @@ module.exports.help = {
     name: "dimension"
 }
 
-// CRUD Operations for Dimensions
+async function clearCache(msg, client, args) {
+    console.log(client.models.dimension.collection)
+}
+
+// >CREATE< (D O N E)
 async function dimensionCreate(msg, client, args) {
     
     var newDimension = await createDimensionSequence(msg);
     if(!newDimension) {
-        msg.channel.send("A problem was encountered while making a new dimension ;-;. Contact developer...")
+        msg.channel.send("Exited the dimension™ setup wizard!")
+        return;
     };
 
     // Create new dimension™ role:
@@ -94,18 +103,27 @@ async function dimensionCreate(msg, client, args) {
     })
     await msg.channel.send(dimensionEmbed);
 
-    Dimension.create(newDimension, (err, docs) => {
-        if(err) {
-            console.log("ERROR WHEN SAVING DIMENSION USING DIMENSION CREATE: \n" + err);
-            return;
-        }
-        if(docs) {
-            msg.channel.send(`Successfully created the \'${docs.name}\' dimension!`)
-        }
-    });
+    // Dimension.create(newDimension, (err, docs) => {
+    //     if(err) {
+    //         console.log("ERROR WHEN SAVING DIMENSION USING DIMENSION CREATE: \n" + err);
+    //         return;
+    //     }
+    //     if(docs) {
+    //         msg.channel.send(`Successfully created the \'${docs.name}\' dimension!`)
+    //     }
+    // });
+    await functions.db.add(
+        client,
+        client.models.dimension, 
+        newDimension, 
+        async (err) => {console.log("ERROR WHEN SAVING DIMENSION USING DIMENSION CREATE: \n" + err);},
+        async (docs) => {msg.channel.send(`Successfully created the \'${docs.name}\' dimension!`)}
+    );
 
 }
 
+// >FIND< {} (D O N E)
+// detailedDetails 
 async function dimensionUpdate(msg, client, args) {
     
     const embedOne = new RichEmbed()
@@ -113,28 +131,30 @@ async function dimensionUpdate(msg, client, args) {
     var allDimensions = {};
     // will be structured like this { "nameOfRole": "idOfRole", "nameOfRole": "idOfRole", etc... }
     // 1. connect to the db, get all dimensions
-    await Dimension.find({}, {name: 1}, (err, docs) => {
-        if(err) {
-            console.log("ERROR TRYING TO RETRIEVE DIMENSIONS FOR DIMENSIONUPDATE(): \n" + err);
-            return;
-        }
-        if(docs) {
-            docs.forEach((doc) => {
-                allDimensions[doc.name] = doc["_id"];
-                embedOne.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
-            })
+    // await Dimension.find({}, {name: 1}, (err, docs) => {
+    //     if(err) {
+    //         console.log("ERROR TRYING TO RETRIEVE DIMENSIONS FOR DIMENSIONUPDATE(): \n" + err);
+    //         return;
+    //     }
+    //     if(docs) {
+    //         docs.forEach((doc) => {
+    //             allDimensions[doc.name] = doc["_id"];
+    //             embedOne.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
+    //         })
 
-        }
+    //     }
+    // })
+    await client.cache.dimensions.forEach(dimension => {
+        allDimensions[dimension.name] = dimension["_id"];
+        embedOne.addField(`**${dimension.name}**`, `<@&${dimension["_id"]}>`);
     })
 
     // 2. set variables for rich embed (mention role using <$&>) with fields
     embedOne.setTitle("__**Dimension™ Update Wizard**__");
-    //embed.setColor(converter.hexToDec("0xDB3BFE"));
     
     // 3. ask/send embed, and wait for appropriate answer
     var updateAttempted = false;
     do {
-        var condition = false;
         // description
         var dimensionUpdateMessage = "Type the __**exact name**__ (white text above the role) of the dimension from this list you want to update, or type \'quit\' to stop this process:";
         if(updateAttempted) {
@@ -155,7 +175,7 @@ async function dimensionUpdate(msg, client, args) {
     var selectedDimensionID = allDimensions[dimensionToUpdate.first().content];
     
 
-    await functions.embed.dimension.detailedDetails(selectedDimensionID, msg);
+    await functions.embed.dimension.detailedDetails(selectedDimensionID, msg, client);
     const updateOptions = [
         "name",
         "description",
@@ -192,23 +212,23 @@ async function dimensionUpdate(msg, client, args) {
 
     switch (whatToUpdateResponse) {
         case "name":
-            await updateFunctions.updateName(selectedDimensionID, msg);
+            await updateFunctions.updateName(selectedDimensionID, msg, client);
             // console.log("name")
             break;
         case "description":
-            await updateFunctions.updateDescription(selectedDimensionID, msg);
+            await updateFunctions.updateDescription(selectedDimensionID, msg, client);
             // console.log("description")
             break;
         case "color":
-            await updateFunctions.updateColor(selectedDimensionID, msg);
+            await updateFunctions.updateColor(selectedDimensionID, msg, client);
             // console.log("color")
             break;
         case "emoji":
-            await updateFunctions.updateEmoji(selectedDimensionID, msg);
+            await updateFunctions.updateEmoji(selectedDimensionID, msg, client);
             // console.log("emoji")
             break;
         case "graphic": 
-            await updateFunctions.updateGraphic(selectedDimensionID, msg);
+            await updateFunctions.updateGraphic(selectedDimensionID, msg, client);
             // console.log("graphic")
             break;
         default: 
@@ -217,6 +237,7 @@ async function dimensionUpdate(msg, client, args) {
     }
 }
 
+// FIND BY ID AND >DELETE< (D O N E)
 async function dimensionDelete(msg, client, args) {
     
     const embed = new RichEmbed()
@@ -224,23 +245,26 @@ async function dimensionDelete(msg, client, args) {
     var allDimensions = {};
     // will be structured like this { "nameOfRole": "idOfRole", "nameOfRole": "idOfRole", etc... }
     // 1. connect to the db, get all dimensions
-    await Dimension.find({}, {name: 1}, (err, docs) => {
-        if(err) {
-            console.log("ERROR TRYING TO RETRIEVE DIMENSIONS FOR DIMENSIONDELETE(): \n" + err);
-            return;
-        }
-        if(docs) {
-            docs.forEach((doc) => {
-                allDimensions[doc.name] = doc["_id"];
-                embed.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
-            })
+    // await Dimension.find({}, {name: 1}, (err, docs) => {
+    //     if(err) {
+    //         console.log("ERROR TRYING TO RETRIEVE DIMENSIONS FOR DIMENSIONDELETE(): \n" + err);
+    //         return;
+    //     }
+    //     if(docs) {
+    //         docs.forEach((doc) => {
+    //             allDimensions[doc.name] = doc["_id"];
+    //             embed.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
+    //         })
 
-        }
+    //     }
+    // })
+    await client.cache.dimensions.forEach(dimension => {
+        allDimensions[dimension.name] = dimension["_id"];
+        embed.addField(`**${dimension.name}**`, `<@&${dimension["_id"]}>`);
     })
 
     // 2. set variables for rich embed (mention role using <$&>) with fields
     embed.setTitle("__**Dimension™ Delete Wizard**__");
-    //embed.setColor(converter.hexToDec("0xDB3BFE"));
     
     // 3. ask/send embed, and wait for appropriate answer
     var deleteAttempted = false;
@@ -279,41 +303,59 @@ async function dimensionDelete(msg, client, args) {
     } while (confirmation.first().content.toLowerCase() != "confirm")
 
     // 5. delete dimension db entry using its id
-    Dimension.findByIdAndDelete(selectedDimensionID, (err, doc) => {
-        if(err) {
-            console.log("ERROR DELETING DIMENSION BY ID (MONGOOSE/MONGODB ERROR): \m" + err);
-            return;
-        }
-        msg.channel.send(`Successfully deleted the ${doc.name} dimension™ from the database, along with its roles!`);
-    })
+    // Dimension.findByIdAndDelete(selectedDimensionID, (err, doc) => {
+    //     if(err) {
+    //         console.log("ERROR DELETING DIMENSION BY ID (MONGOOSE/MONGODB ERROR): \m" + err);
+    //         return;
+    //     }
+    //     msg.channel.send(`Successfully deleted the ${doc.name} dimension™ from the database, along with its roles!`);
+    // })
+    var startTime = new Date();
+    await functions.db.delete.one(
+        client,
+        client.models.dimension, 
+        {_id: selectedDimensionID}, 
+        async (err) => {console.log("ERROR DELETING DIMENSION BY ID (MONGOOSE/MONGODB ERROR): \m" + err);},
+        async (doc) => {msg.channel.send(`Successfully deleted the dimension™ from the database, along with its roles!`);}
+    )
+    var endTime = new Date();
+    var time = endTime - startTime;
+    await msg.channel.send("Took " + time.toString() + " milliseconds to process!");
     
     // 6. delete the role from the guild
     await msg.guild.roles.get(selectedDimensionID).delete();
 
 }
 
+// >FIND< {} (D O N E)
 async function dimensionList(msg, client, args) {
     
     const embed = new RichEmbed();
     embed.setTitle("__**Dimension™ List**__");
     embed.setDescription("Here's a list of all the existing dimensions. Type \'>dimension create\' to create a dimension, and type \'>dimension delete\' to delete one.")
 
-    await Dimension.find({}, {name: 1}, (err, docs) => {
-        if(err) {
-            console.log("ERROR RETRIEVING DIMENSION DATA FOR DIMENSIONLIST FUNCTION: \n" + err)
-            return;
-        }
-        if(docs) {
-            docs.forEach(doc => {
-                embed.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
-            })
-        }
+    // await Dimension.find({}, {name: 1}, (err, docs) => {
+    //     if(err) {
+    //         console.log("ERROR RETRIEVING DIMENSION DATA FOR DIMENSIONLIST FUNCTION: \n" + err)
+    //         return;
+    //     }
+    //     if(docs) {
+    //         docs.forEach(doc => {
+    //             embed.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
+    //         })
+    //     }
+    // })
+    // console.log(client.cache.dimensions.array().length)
+    await client.cache.dimensions.forEach(dimension => {
+        embed.addField(`**${dimension.name}**`, `<@&${dimension["_id"]}>`);
     })
 
     await msg.channel.send(embed);
 
 }
 
+// >FIND< {} (D O N E)
+// detailedDetails
 async function dimensionDetails(msg, client, args) {
     
     const embed = new RichEmbed()
@@ -321,18 +363,24 @@ async function dimensionDetails(msg, client, args) {
     var allDimensions = {};
     // will be structured like this { "nameOfRole": "idOfRole", "nameOfRole": "idOfRole", etc... }
     // 1. connect to the db, get all dimensions
-    await Dimension.find({}, {name: 1}, (err, docs) => {
-        if(err) {
-            console.log("ERROR TRYING TO RETRIEVE DIMENSIONS FOR DIMENSIONDETAILS(): \n" + err);
-            return;
-        }
-        if(docs) {
-            docs.forEach((doc) => {
-                allDimensions[doc.name] = doc["_id"];
-                embed.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
-            })
+    // await Dimension.find({}, {name: 1}, (err, docs) => {
+    //     if(err) {
+    //         console.log("ERROR TRYING TO RETRIEVE DIMENSIONS FOR DIMENSIONDETAILS(): \n" + err);
+    //         return;
+    //     }
+    //     if(docs) {
+    //         docs.forEach((doc) => {
+    //             allDimensions[doc.name] = doc["_id"];
+    //             embed.addField(`**${doc.name}**`, `<@&${doc["_id"]}>`);
+    //         })
 
-        }
+    //     }
+    // })
+    console.log(client.cache.dimensions.array());
+    await client.cache.dimensions.forEach(dimension => {
+        console.log(dimension.name)
+        allDimensions[dimension.name] = dimension["_id"];
+        embed.addField(`**${dimension.name}**`, `<@&${dimension["_id"]}>`);
     })
 
     embed.setTitle("__**Dimension™ Details Wizard**__");
@@ -357,11 +405,12 @@ async function dimensionDetails(msg, client, args) {
     } while (!Object.keys(allDimensions).includes(dimensionToView.first().content))
     var selectedDimensionID = allDimensions[dimensionToView.first().content];
 
-    await functions.embed.dimension.detailedDetails(selectedDimensionID, msg);
+    await functions.embed.dimension.detailedDetails(selectedDimensionID, msg, client);
     await msg.channel.send("Here are the server's details <3");
 
 }
 // temporary, until we make a bigger, global (not just >dimension) help wizard ig
+// NO DB FUNCTIONS
 async function dimensionHelp(msg, client, args) {
     const embed = new RichEmbed({
         title: "__**Dimension™ Help**__",
@@ -381,6 +430,7 @@ async function dimensionHelp(msg, client, args) {
     await msg.channel.send("Done :3")
 }
 
+// NO DB FUNCTIONS
 async function createDimensionSequence(msg) {
 
     var newDimension = {}
@@ -422,8 +472,8 @@ async function createDimensionSequence(msg) {
         }
         if(dimensionColor.first().content === "quit") {creationQuitted(msg); return }
         colorAttempted = true;
-    } while (!dimensionColor.first().content.startsWith("#") || dimensionColor.first().content.length > 7)
-    var theDimensionColor = parseInt(converter.hexToDec(dimensionColor.first().content.replace("#", "0x")));
+    } while (!functions.toolkit.colorChecker.isHexColor(dimensionColor.first().content))
+    var theDimensionColor = parseInt(functions.toolkit.converter.hexToDec(dimensionColor.first().content.replace("#", "0x")));
     newDimension.color = theDimensionColor;
 
 
@@ -432,7 +482,7 @@ async function createDimensionSequence(msg) {
     do {
         var emojiSetupMessage = "React to this message with an \'emote\' **FROM THIS SERVER** you want to use for the new dimension™:";
         if(emojiAttempted) {emojiSetupMessage = "You need to use a custom emote from this server, and it cannot be a default emote, like :joy: Try Again."}
-        var emojiRequest = await msg.channel.send(new RichEmbed({title: "__**New Dimension™: Emoji**__", description: emojiSetupMessage, color: theDimensionColor, footer: {text: "Type \'quit\' to quit wizard..."}}))
+        var emojiRequest = await msg.channel.send(new RichEmbed({title: "__**New Dimension™: Emoji**__", description: emojiSetupMessage, color: theDimensionColor, footer: {text: "You can't type \'quit\' in this part of the setup. Choose something random if you're unsure. You can update it later..."}}))
         try{
             var dimensionEmoji = await emojiRequest.awaitReactions(reaction => reaction.users.first().id === msg.author.id, {maxEmojis: 1});
         }catch(err){
@@ -457,9 +507,10 @@ async function createDimensionSequence(msg) {
     return newDimension;
 }
 
-
+// >UPDATE< ONE (ALL OF THEM) (D O N E)
+// detailedDetails (ALL OF THEM)
 var updateFunctions = {
-    updateName: async (dimensionID, msg) => {
+    updateName: async (dimensionID, msg, client) => {
 
         await msg.channel.send(new RichEmbed({title: `__**Update Dimension™: Name**__`, description: `Enter the new \'name\' of the <@&${dimensionID}> dimension™:`, footer: {text: "Type \'quit\' to quit wizard..."}}))
         try {
@@ -470,21 +521,36 @@ var updateFunctions = {
         if(dimensionName.first().content === "quit") {msg.channel.send("You quit the dimensions™ setup wizard."); return }
         var updatedName = dimensionName.first().content.toString();
 
-        Dimension.updateOne({_id: dimensionID}, {name: updatedName}, async (err, rawResponse) => {
-            if(err) {
+        // Dimension.updateOne({_id: dimensionID}, {name: updatedName}, async (err, rawResponse) => {
+        //     if(err) {
+        //         console.log("ERROR UPDATING DIMENSION - NAME (DB VERSION): \n" + err)
+        //         await msg.channel.send("There was an issue updating the name on the database ;-;. Contact the developer...");
+        //         return;
+        //     }
+        //     if(rawResponse) {
+        //         // success
+        //         await msg.guild.roles.get(dimensionID).edit({name: `『${updatedName}』`})
+        //         await msg.channel.send("Successfully updated the name <3");
+        //         await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+        //     }
+        // })
+        await functions.db.update.one(
+            client,
+            client.models.dimension, 
+            {_id: dimensionID}, 
+            {name: updatedName},
+            async (err) => {
                 console.log("ERROR UPDATING DIMENSION - NAME (DB VERSION): \n" + err)
                 await msg.channel.send("There was an issue updating the name on the database ;-;. Contact the developer...");
-                return;
-            }
-            if(rawResponse) {
-                // success
+            },
+            async (doc) => {
                 await msg.guild.roles.get(dimensionID).edit({name: `『${updatedName}』`})
                 await msg.channel.send("Successfully updated the name <3");
-                await functions.embed.dimension.detailedDetails(dimensionID, msg);
+                await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
-        })
+        );
     },
-    updateDescription: async (dimensionID, msg) => {
+    updateDescription: async (dimensionID, msg, client) => {
         
         await msg.channel.send(new RichEmbed({title: `__**Update Dimension™: Description**__`, description: `Enter the new \'description\' of the <@&${dimensionID}> dimension™:`, footer: {text: "Type \'quit\' to quit wizard..."}}))
         try {
@@ -495,24 +561,38 @@ var updateFunctions = {
         if(dimensionDescription.first().content === "quit") {msg.channel.send("You quit the dimensions™ setup wizard."); return }
         var updatedDescription = dimensionDescription.first().content.toString();
 
-        Dimension.updateOne({_id: dimensionID}, {description: updatedDescription}, async (err, rawResponse) => {
-            if(err) {
+        // Dimension.updateOne({_id: dimensionID}, {description: updatedDescription}, async (err, rawResponse) => {
+        //     if(err) {
+        //         console.log("ERROR UPDATING DIMENSION - DESCRIPTION (DB VERSION): \n" + err)
+        //         await msg.channel.send("There was an issue updating the description on the database ;-;. Contact the developer...");
+        //         return;
+        //     }
+        //     if(rawResponse) {
+        //         // success
+        //         await msg.channel.send("Successfully updated the description <3");
+        //         await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+        //     }
+        // })
+        await functions.db.update.one(
+            client,
+            client.models.dimension, 
+            {_id: dimensionID}, 
+            {description: updatedDescription},
+            async (err) => {
                 console.log("ERROR UPDATING DIMENSION - DESCRIPTION (DB VERSION): \n" + err)
                 await msg.channel.send("There was an issue updating the description on the database ;-;. Contact the developer...");
-                return;
-            }
-            if(rawResponse) {
-                // success
+            },
+            async (doc) => {
                 await msg.channel.send("Successfully updated the description <3");
-                await functions.embed.dimension.detailedDetails(dimensionID, msg);
+                await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
-        })
+        )
     },
-    updateColor: async (dimensionID, msg) => {
+    updateColor: async (dimensionID, msg, client) => {
         var colorAttempted = false;
         do {
             var colorSetupMessage = `Enter the new hex \'color\' of the <@&${dimensionID}> dimension™ USING THIS FORMAT: \'#000000\' . This will also be the color of your dimension role.`;
-            if(colorAttempted) {colorSetupMessage = "You need to add the hashtag (#), plus 6 digits. Try Again."}
+            if(colorAttempted) {colorSetupMessage = "Needs to be a valid hex color. You need to add the hashtag (#), plus 6 digits. Try Again."}
             await msg.channel.send(new RichEmbed({title: `__**Update Dimension™: Color**__`, description: colorSetupMessage, footer: {text: "Type \'quit\' to quit wizard..."}}))
             try {
                 var dimensionColor = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
@@ -521,29 +601,44 @@ var updateFunctions = {
             }
             if(dimensionColor.first().content === "quit") {msg.channel.send("You quit the dimensions™ setup wizard."); return }
             colorAttempted = true;
-        } while (!dimensionColor.first().content.startsWith("#") || dimensionColor.first().content.length > 7)
-        var updatedColor = parseInt(converter.hexToDec(dimensionColor.first().content.replace("#", "0x")));
+        } while (!functions.toolkit.colorChecker.isHexColor(dimensionColor.first().content))
+        var updatedColor = parseInt(functions.toolkit.converter.hexToDec(dimensionColor.first().content.replace("#", "0x")));
         
-        Dimension.updateOne({_id: dimensionID}, {color: updatedColor}, async (err, rawResponse) => {
-            if(err) {
+        // Dimension.updateOne({_id: dimensionID}, {color: updatedColor}, async (err, rawResponse) => {
+        //     if(err) {
+        //         console.log("ERROR UPDATING DIMENSION - COLOR (DB VERSION): \n" + err)
+        //         await msg.channel.send("There was an issue updating the color on the database ;-;. Contact the developer...");
+        //         return;
+        //     }
+        //     if(rawResponse) {
+        //         // success
+        //         await msg.guild.roles.get(dimensionID).edit({color: updatedColor});
+        //         await msg.channel.send("Successfully updated the color <3");
+        //         await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+        //     }
+        // })
+        await functions.db.update.one(
+            client,
+            client.models.dimension, 
+            {_id: dimensionID}, 
+            {color: updatedColor},
+            async (err) => {
                 console.log("ERROR UPDATING DIMENSION - COLOR (DB VERSION): \n" + err)
                 await msg.channel.send("There was an issue updating the color on the database ;-;. Contact the developer...");
-                return;
-            }
-            if(rawResponse) {
-                // success
+            },
+            async (doc) => {
                 await msg.guild.roles.get(dimensionID).edit({color: updatedColor});
-                await msg.channel.send("Successfully updated the name <3");
-                await functions.embed.dimension.detailedDetails(dimensionID, msg);
+                await msg.channel.send("Successfully updated the color <3");
+                await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
-        })
+        );
     },
-    updateEmoji: async (dimensionID, msg) => {
+    updateEmoji: async (dimensionID, msg, client) => {
         var emojiAttempted = false
         do {
             var emojiSetupMessage = `React to this message with a new \'emote\' **FROM THIS SERVER** you want to use for the updated <@&${dimensionID}> dimension™ emote:`;
             if(emojiAttempted) {emojiSetupMessage = "You need to use a custom emote from this server, and it cannot be a default emote, like :joy: Try Again."}
-            var emojiRequest = await msg.channel.send(new RichEmbed({title: `__**Update <@&${dimensionID}> Dimension™: Emoji**__`, description: emojiSetupMessage, footer: {text: "Type \'quit\' to quit wizard..."}}))
+            var emojiRequest = await msg.channel.send(new RichEmbed({title: `__**Update <@&${dimensionID}> Dimension™: Emoji**__`, description: emojiSetupMessage, footer: {text: "You can't type \'quit\' in this part of the setup. Choose something random if you're unsure. You can update it later..."}}))
             try{
                 var dimensionEmoji = await emojiRequest.awaitReactions(reaction => reaction.users.first().id === msg.author.id, {maxEmojis: 1});
             }catch(err){
@@ -558,20 +653,34 @@ var updateFunctions = {
             name: dimensionEmoji.first().emoji.name
         }
 
-        Dimension.updateOne({_id: dimensionID}, {emoji: updatedEmoji}, async (err, rawResponse) => {
-            if(err) {
+        // Dimension.updateOne({_id: dimensionID}, {emoji: updatedEmoji}, async (err, rawResponse) => {
+        //     if(err) {
+        //         console.log("ERROR UPDATING DIMENSION - EMOJI (DB VERSION): \n" + err)
+        //         await msg.channel.send("There was an issue updating the emoji on the database ;-;. Contact the developer...");
+        //         return;
+        //     }
+        //     if(rawResponse) {
+        //         // success
+        //         await msg.channel.send("Successfully updated the emote <3");
+        //         await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+        //     }
+        // })
+        await functions.db.update.one(
+            client,
+            client.models.dimension, 
+            {_id: dimensionID}, 
+            {emoji: updatedEmoji},
+            async (err) => {
                 console.log("ERROR UPDATING DIMENSION - EMOJI (DB VERSION): \n" + err)
                 await msg.channel.send("There was an issue updating the emoji on the database ;-;. Contact the developer...");
-                return;
-            }
-            if(rawResponse) {
-                // success
+            },
+            async (doc) => {
                 await msg.channel.send("Successfully updated the emote <3");
-                await functions.embed.dimension.detailedDetails(dimensionID, msg);
+                await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
-        })
+        );
     },
-    updateGraphic: async (dimensionID, msg) => {
+    updateGraphic: async (dimensionID, msg, client) => {
         var graphicAttempt = false;
         do {
             var graphicSetupMessage = `Enter the new \'graphic\' **url** for the <@&${dimensionID}> dimension™. The url must end with either a __\'.gif\', \'.png\', \'.jpg\', or a \'.jpeg\'__:`;
@@ -589,17 +698,31 @@ var updateFunctions = {
         } while (!isMedia)
         var updatedGraphic = dimensionGraphic.first().content.toString();
 
-        Dimension.updateOne({_id: dimensionID}, {graphic: updatedGraphic}, async (err, rawResponse) => {
-            if(err) {
+        // Dimension.updateOne({_id: dimensionID}, {graphic: updatedGraphic}, async (err, rawResponse) => {
+        //     if(err) {
+        //         console.log("ERROR UPDATING DIMENSION - GRAPHIC (DB VERSION): \n" + err)
+        //         await msg.channel.send("There was an issue updating the graphic on the database ;-;. Contact the developer...");
+        //         return;
+        //     }
+        //     if(rawResponse) {
+        //         // success
+        //         await msg.channel.send("Successfully updated the graphic <3");
+        //         await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+        //     }
+        // })
+        await functions.db.update.one(
+            client,
+            client.models.dimension, 
+            {_id: dimensionID}, 
+            {graphic: updatedGraphic},
+            async (err) => {
                 console.log("ERROR UPDATING DIMENSION - GRAPHIC (DB VERSION): \n" + err)
                 await msg.channel.send("There was an issue updating the graphic on the database ;-;. Contact the developer...");
-                return;
-            }
-            if(rawResponse) {
-                // success
+            },
+            async (doc) => {
                 await msg.channel.send("Successfully updated the graphic <3");
-                await functions.embed.dimension.detailedDetails(dimensionID, msg);
+                await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
-        })
+        );
     }
 }

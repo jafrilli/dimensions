@@ -1,19 +1,89 @@
-const Discord = require("discord.js");
+const { Client, Collection } = require("discord.js");
 const botSettings = require("./botSettings.json");
 const fs = require("fs");
 const mongoose = require("mongoose");
-const client = new Discord.Client();
+const client = new Client();
 
-client.commands = new Discord.Collection();
+client.commands = new Collection();
 client.usingCommand = [];
 
-mongoose.connect('mongodb://localhost:27017/dimensionsDB', { useNewUrlParser: true }).then(console.log("\nSUCCESSFULLY CONNECTED TO MONGO DB"));
+// cache and related;
+// ITS SUPER IMPORTANT THAT THESE NAMES RESEMBLE THE COLLECTION NAMES (you use schema.collection.name) in recache
+client.cache = {
+    dimensions: new Collection(),
+    members: new Collection(),
+    rrmessages: new Collection()
+}
+client.couldNotCache = {
+    dimensions: false,
+    members: false,
+    rrmessages: false
+}
+// models
+client.models = {
+    dimension: require("./models/dimension.js"),
+    member: require("./models/member.js"),
+    rrmessage: require("./models/rrmessage.js")
+}
 
+
+mongoose.connect('mongodb://localhost:27017/dimensionsDB', { useNewUrlParser: true })
+    .then(console.log("\nSUCCESSFULLY CONNECTED TO MONGO DB"))
+    .catch(err => {
+        if(err) {
+            console.log("\nCONNECTION TO MONGO DB FAILED: \n" + err)
+        }
+    });
+        // DISABLE ALL DB RELATED FUNCTIONS, OR FIND A WAY TO RESTART USING CODE (client.isConnected = false, if(!client.isConnected) return;)
+
+client.models.dimension.find({}, async (err, docs) => {
+    if(err) {
+        console.log("Could not initially (before client ready) cache dimension data.");
+        client.couldNotCache.dimensions = true;
+        return;
+    }
+    if(docs) {
+        await docs.forEach(doc => {
+            client.cache.dimensions.set(doc["_id"], doc);
+        })
+        console.log("Initially cached the \'dimensions\' collection!")
+    }
+})
+client.models.member.find({}, async (err, docs) => {
+    if(err) {
+        console.log("Could not initially (before client ready) cache members data.");
+        client.couldNotCache.members = true;
+        return;
+    }
+    if(docs) {
+        await docs.forEach(doc => {
+            client.cache.members.set(doc["_id"], doc);
+        })
+        console.log("Initially cached the \'members\' collection!")
+    }
+})
+client.models.rrmessage.find({}, async (err, docs) => {
+    if(err) {
+        console.log("Could not initially (before client ready) cache rrmessage data.");
+        client.couldNotCache.rrmessages = true;
+        return;
+    }
+    if(docs) {
+        await docs.forEach(doc => {
+            client.cache.rrmessages.set(doc["_id"], doc);
+        })
+        console.log("Initially cached the \'rrmessages\' collection!");
+    }
+})
+
+// TODO: 
 // 1. DIMENSION CREATE MUST MAKE A NEW DIMENSION ROLE FROM SCRATCH (done)
 // 2. DIMENSION UPDATE WIZARD {WHAT WOULD U LIKE TO UPDATE}
 // 3. GET STARTED WITH ROLE SAVING - '>dimension addRole <dimension> <role>'
 // 4. MAKE A GLOBAL FUNCTION THAT UPDATES PORTAL EVERY TIME THERE IS A CHANGE (CREATE/DELETE)
 
+
+// DO SOMETHING WITH THE couldNotCache boolean (restrict functions);
 client.on("ready", async () => {
     console.log("\n================== READY START ==================")
     
