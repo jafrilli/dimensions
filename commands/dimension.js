@@ -376,9 +376,8 @@ async function dimensionDetails(msg, client, args) {
 
     //     }
     // })
-    console.log(client.cache.dimensions.array());
+    //console.log(client.cache.dimensions.array());
     await client.cache.dimensions.forEach(dimension => {
-        console.log(dimension.name)
         allDimensions[dimension.name] = dimension["_id"];
         embed.addField(`**${dimension.name}**`, `<@&${dimension["_id"]}>`);
     })
@@ -534,7 +533,7 @@ var updateFunctions = {
         //         await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
         //     }
         // })
-        await functions.db.update.one(
+        functions.db.update.one(
             client,
             client.models.dimension, 
             {_id: dimensionID}, 
@@ -545,10 +544,11 @@ var updateFunctions = {
             },
             async (doc) => {
                 await msg.guild.roles.get(dimensionID).edit({name: `『${updatedName}』`})
-                await msg.channel.send("Successfully updated the name <3");
-                await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+                await msg.channel.send("Successfully updated the name <3")
+                // await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
-        );
+        )
+
     },
     updateDescription: async (dimensionID, msg, client) => {
         
@@ -584,7 +584,7 @@ var updateFunctions = {
             },
             async (doc) => {
                 await msg.channel.send("Successfully updated the description <3");
-                await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+                // await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
         )
     },
@@ -629,7 +629,7 @@ var updateFunctions = {
             async (doc) => {
                 await msg.guild.roles.get(dimensionID).edit({color: updatedColor});
                 await msg.channel.send("Successfully updated the color <3");
-                await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+                // await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
         );
     },
@@ -676,7 +676,7 @@ var updateFunctions = {
             },
             async (doc) => {
                 await msg.channel.send("Successfully updated the emote <3");
-                await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+                // await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
         );
     },
@@ -721,7 +721,7 @@ var updateFunctions = {
             },
             async (doc) => {
                 await msg.channel.send("Successfully updated the graphic <3");
-                await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+                // await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
         );
     }
