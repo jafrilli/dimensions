@@ -1,6 +1,4 @@
 const { RichEmbed, Role, Collection } = require("discord.js");
-const Dimension = require("../models/dimension.js");
-const converter = require("hex2dec");
 const functions = require("../functions.js");
 
 
@@ -41,9 +39,14 @@ module.exports.run = async (msg, client, args) => {
             removedID()
             break;
         case 'clearCache':
-            await clearCache(msg, client, args);
+            await viewCache(msg, client, args);
             removedID()
             break;
+        case 'addRoles': {
+            await addRoles(msg, client, args);
+            removedID();
+            break;
+        }
         default:
             await msg.channel.send(`That was an invalid argument. Try again dumbass <@${msg.author.id}>`)
             removedID();
@@ -55,8 +58,109 @@ module.exports.help = {
     name: "dimension"
 }
 
-async function clearCache(msg, client, args) {
-    console.log(client.models.dimension.collection)
+async function addRoles(msg, client, args) {
+    var wizardResponse = await addRolesWizard(msg, client, args);
+    if(!wizardResponse) {
+        return;
+    };
+    
+    var successEmbed = new RichEmbed({
+        title: "__**Successfully Added Dimension™ Roles!**__",
+        description: `The roles you have specified have been successfully added to the <@&${wizardResponse.dimensionID}>. Here are the roles you added: `
+    })
+    wizardResponse.addedRoles.forEach(role => {
+        successEmbed.addField(`ID: ${role}`, `<@&${role}>`)
+    })
+
+    // upload them to the database using the db functions
+    await functions.db.update.one(
+        client, 
+        client.models.dimension,
+        {_id: wizardResponse.dimensionID},
+        {$addToSet: {roles: {$each: wizardResponse.addedRoles}}},
+        (err) => {console.log("There was an error trying to add the new roles from addRoles into the database!")},
+        (doc) => {console.log("Added the collected roles to the database!"); msg.channel.send(successEmbed)}
+    )
+
+}
+
+async function addRolesWizard(msg, client, args) {
+    
+
+    // maybe add if role is already in another dimension dont add? but i dont think that would cause problems anyway
+    var collectedRoles = [];
+    var dimensionRoles = client.cache.dimensions.keyArray();
+    var allDimensions = {};
+    const embedOne = new RichEmbed();
+    
+    await client.cache.dimensions.forEach(dimension => {
+        allDimensions[dimension.name] = dimension["_id"];
+        embedOne.addField(`**${dimension.name}**`, `<@&${dimension["_id"]}>`);
+    })
+
+    embedOne.setTitle("__**Dimension™ Role Addition Wizard**__");
+    
+    var selectionAttempted = false;
+    do {
+        // description
+        var dimensionRoleAddMessage = "Type the __**exact name**__ (white text above the role) of the dimension from this list you want to add roles to, or type \'quit\' to stop this process:";
+        if(selectionAttempted) {
+            dimensionRoleAddMessage = "Incorrect response! Response must be the exact name of one of the dimensions on this list! Try again, or type \'quit\' to stop this process:"
+        }
+        embedOne.setDescription(dimensionRoleAddMessage);
+
+        await msg.channel.send(embedOne);
+        try {
+            var dimensionToUpdate = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+        } catch(err) {
+            console.log("ERROR AWAITING DIMENSION ROLE TO ADD ROLES TO IN DIMENSION ADDROLE: \n" + err)
+        }
+        if(dimensionToUpdate.first().content === "quit") { msg.channel.send("You quit the dimensions™ role addition wizard."); return }
+        
+        selectionAttempted = true;
+    } while (!Object.keys(allDimensions).includes(dimensionToUpdate.first().content))
+    var selectedDimensionID = allDimensions[dimensionToUpdate.first().content];
+
+
+    var additionAttempted = false;
+    do {
+        var addRoleMessage = `**Mention** __one__ role you would like to add to the <@&${selectedDimensionID}> dimension™.`;
+        if(additionAttempted) {addRoleMessage = `Your response needs to be a role mention (It cannot be a dimension role like <@&${selectedDimensionID}>).`}
+        await msg.channel.send(new RichEmbed({title: "__**Add Dimension™ Roles**__", description: addRoleMessage, footer: {text: "Type \'done\' when you're done adding roles, or type \'quit\' to quit wizard entirely..."}}))
+        
+
+        try {
+            var addedRole = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+        } catch(err) {
+            console.log("ERROR ADDING DIMENSION ROLES: \n" + err)
+        }
+        
+        
+        if(addedRole.first().content === "quit") { message.channel.send("You quit the dimensions™ role setup wizard."); return }
+        
+        additionAttempted = true;
+    
+        if(addedRole.first().mentions.roles.array().length > 0) {
+            var addedRoleID = addedRole.first().mentions.roles.first().id
+            if(!dimensionRoles.includes(addedRoleID)) {
+                additionAttempted = false;
+                collectedRoles.push(addedRoleID);
+                await msg.channel.send(`Added the <@&${addedRoleID}> role to the list of roles that need to be added. Type \'done\' if you added everything.`);
+            }
+        }
+    
+    } while (addedRole.first().content != "done")
+
+    var additionResponse = {
+        dimensionID: selectedDimensionID,
+        addedRoles: collectedRoles
+    };
+    
+    return additionResponse;
+}
+
+async function viewCache(msg, client, args) {
+    console.log(client.cache.dimensions)
 }
 
 // >CREATE< (D O N E)
