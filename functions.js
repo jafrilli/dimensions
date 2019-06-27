@@ -3,6 +3,7 @@ const isURL = require("is-url");
 const colorChecker = require("css-color-checker");
 const converter = require("hex2dec");
 const { Collection } = require("discord.js");
+const botSettings = require("./botSettings.json")
 
 async function isMediaURL(string) {
     if(await !isURL(string)) return false;
@@ -278,5 +279,6 @@ module.exports.db = {
 module.exports.toolkit = {
     isMediaURL,
     colorChecker,
-    converter
+    converter,
+    botSettings
 }

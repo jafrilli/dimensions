@@ -42,11 +42,14 @@ module.exports.run = async (msg, client, args) => {
             await viewCache(msg, client, args);
             removedID()
             break;
-        case 'addRoles': {
+        case 'addRoles': 
             await addRoles(msg, client, args);
             removedID();
             break;
-        }
+        case 'deleteRoles': 
+            await deleteRoles(msg, client, args);
+            removedID();
+            break;
         default:
             await msg.channel.send(`That was an invalid argument. Try again dumbass <@${msg.author.id}>`)
             removedID();
@@ -60,9 +63,7 @@ module.exports.help = {
 
 async function addRoles(msg, client, args) {
     var wizardResponse = await addRolesWizard(msg, client, args);
-    if(!wizardResponse) {
-        return;
-    };
+    if(!wizardResponse) return;
     
     var successEmbed = new RichEmbed({
         title: "__**Successfully Added Dimension™ Roles!**__",
@@ -130,26 +131,26 @@ async function addRolesWizard(msg, client, args) {
         
 
         try {
-            var addedRole = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+            var roleToAdd = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
         } catch(err) {
             console.log("ERROR ADDING DIMENSION ROLES: \n" + err)
         }
         
         
-        if(addedRole.first().content === "quit") { message.channel.send("You quit the dimensions™ role setup wizard."); return }
+        if(roleToAdd.first().content === "quit") { message.channel.send("You quit the dimensions™ role setup wizard."); return }
         
         additionAttempted = true;
     
-        if(addedRole.first().mentions.roles.array().length > 0) {
-            var addedRoleID = addedRole.first().mentions.roles.first().id
-            if(!dimensionRoles.includes(addedRoleID)) {
+        if(roleToAdd.first().mentions.roles.array().length > 0) {
+            var roleID = roleToAdd.first().mentions.roles.first().id
+            if(!dimensionRoles.includes(roleID)) {
                 additionAttempted = false;
-                collectedRoles.push(addedRoleID);
-                await msg.channel.send(`Added the <@&${addedRoleID}> role to the list of roles that need to be added. Type \'done\' if you added everything.`);
+                collectedRoles.push(roleID);
+                await msg.channel.send(`Added the <@&${roleID}> role to the list of roles that need to be added. Type \'done\' if you added everything.`);
             }
         }
     
-    } while (addedRole.first().content != "done")
+    } while (roleToAdd.first().content.toLowerCase() != "done")
 
     var additionResponse = {
         dimensionID: selectedDimensionID,
@@ -157,6 +158,124 @@ async function addRolesWizard(msg, client, args) {
     };
     
     return additionResponse;
+}
+
+async function deleteRoles(msg, client, args) {
+    var wizardResponse = await deleteRolesWizard(msg, client, args);
+    if(!wizardResponse) return;
+
+    var successEmbed = new RichEmbed({
+        title: "__**Successfully Deleted Dimension™ Roles!**__",
+        description: `The roles you have specified have been successfully deleted from the <@&${wizardResponse.dimensionID}> dimension list. Here are the roles you deleted: `
+    })
+    
+    wizardResponse.deletedRoles.forEach(role => {
+        successEmbed.addField(`ID: ${role}`, `<@&${role}>`)
+    })
+
+    // upload them to the database using the db functions
+    await functions.db.update.one(
+        client, 
+        client.models.dimension,
+        {_id: wizardResponse.dimensionID},
+        {$pull: {roles: {$in: wizardResponse.deletedRoles}}},
+        (err) => {console.log("There was an error trying to remove roles from deleteRoles from the database!")},
+        (doc) => {console.log("Deleted the collected roles from the database!"); msg.channel.send(successEmbed)}
+    )
+}
+
+async function deleteRolesWizard(msg, client, args) {
+    
+
+    // maybe add if role is already in another dimension dont add? but i dont think that would cause problems anyway
+    var allDimensions = {};
+    var allDimensionRoles = {};
+    var collectedRoles = [];
+
+    const embedOne = new RichEmbed();
+    
+    await client.cache.dimensions.forEach(dimension => {
+        allDimensions[dimension.name] = dimension["_id"];
+        embedOne.addField(`**${dimension.name}**`, `<@&${dimension["_id"]}>`);
+    })
+
+    embedOne.setTitle("__**Dimension™ Role Deletion Wizard**__");
+    
+    var selectionAttempted = false;
+    do {
+        // description
+        var dimensionRoleDeleteMessage = "Type the __**exact name**__ (white text above the role) of the dimension from this list you want to delete roles from, or type \'quit\' to stop this process:";
+        if(selectionAttempted) {
+            dimensionRoleDeleteMessage = "Incorrect response! Response must be the exact name of one of the dimensions on this list! Try again, or type \'quit\' to stop this process:"
+        }
+        embedOne.setDescription(dimensionRoleDeleteMessage);
+
+        await msg.channel.send(embedOne);
+        try {
+            var dimensionToUpdate = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+        } catch(err) {
+            console.log("ERROR AWAITING DIMENSION ROLE TO DELETE ROLES TO IN DIMENSION DELETEROLE: \n" + err)
+        }
+        if(dimensionToUpdate.first().content === "quit") { msg.channel.send("You quit the dimensions™ role deletion wizard."); return }
+        
+        selectionAttempted = true;
+    } while (!Object.keys(allDimensions).includes(dimensionToUpdate.first().content))
+    var selectedDimensionID = allDimensions[dimensionToUpdate.first().content];
+
+
+
+    var embedTwo = new RichEmbed({
+        title: "__**Delete Dimension™ Roles!**__",
+        description: `Type in the name of a role from the <@&${selectedDimensionID}> dimension™ you want to delete.`,
+        footer: {text: "Type \'done\' when you're done deleting roles, or type \'quit\' to quit wizard entirely..."}
+    })
+    await client.cache.dimensions.get(selectedDimensionID).roles.forEach(role => {
+        var roleName = client.guilds.get(functions.toolkit.botSettings.guild).roles.get(role).name
+        allDimensionRoles[roleName] = role;
+        embedTwo.addField(`**${roleName}**`, `<@&${role}>`)
+    })
+        
+
+    var deletionAttempted = false;
+    do {
+        var deleteRoleMessage = `Type in the **name** of __one__ role you would like to delete from the <@&${selectedDimensionID}> dimension™.`;
+        if(deletionAttempted) {deleteRoleMessage = `Your response needs to be the **exactly** the name of the role (The white text over the role mention).`}
+        embedTwo.setDescription(deleteRoleMessage);
+        await msg.channel.send(embedTwo)
+        
+
+        try {
+            var roleToDelete = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+        } catch(err) {
+            console.log("ERROR ADDING DIMENSION ROLES: \n" + err)
+        }
+        
+        
+        if(roleToDelete.first().content === "quit") { message.channel.send("You quit the dimensions™ role deletion wizard."); return }
+        
+        deletionAttempted = true;
+    
+            if(Object.keys(allDimensionRoles).includes(roleToDelete.first().content)) {
+                var roleID = allDimensionRoles[roleToDelete.first().content];
+                if(!collectedRoles.includes(roleID)) {
+                    deletionAttempted = false;
+                    collectedRoles.push(roleID);
+                    await msg.channel.send(`Added the <@&${roleID}> role to the list of roles that need to be deleted. Type \'done\' if you added everything.`);
+                }
+                else {
+                    deletionAttempted = false;
+                    await msg.channel.send(`You already added the <@&${roleID}> role to the list of roles that need to be deleted! Add something else, or type \'done\' if you added everything.`);
+                }
+            }
+
+    } while (roleToDelete.first().content.toLowerCase() != "done")
+
+    var deletionResponse = {
+        dimensionID: selectedDimensionID,
+        deletedRoles: collectedRoles
+    };
+    
+    return deletionResponse;
 }
 
 async function viewCache(msg, client, args) {
