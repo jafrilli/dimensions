@@ -5,8 +5,10 @@ const mongoose = require("mongoose");
 const client = new Client();
 
 client.commands = new Collection();
-client.usingCommand = [];
-
+client.indicators = {
+    teleporting: [],
+    usingCommand: []
+}
 // cache and related;
 // ITS SUPER IMPORTANT THAT THESE NAMES RESEMBLE THE COLLECTION NAMES (you use schema.collection.name) in recache
 client.cache = {
@@ -76,11 +78,8 @@ client.models.rrmessage.find({}, async (err, docs) => {
     }
 })
 
-// TODO: 
-// 1. DIMENSION CREATE MUST MAKE A NEW DIMENSION ROLE FROM SCRATCH (done)
-// 2. DIMENSION UPDATE WIZARD {WHAT WOULD U LIKE TO UPDATE}
-// 3. GET STARTED WITH ROLE SAVING - '>dimension addRole <dimension> <role>'
-// 4. MAKE A GLOBAL FUNCTION THAT UPDATES PORTAL EVERY TIME THERE IS A CHANGE (CREATE/DELETE)
+
+// recent: add client.connect and client.models in the ready thing so if it restarts, the db is recached
 
 
 // DO SOMETHING WITH THE couldNotCache boolean (restrict functions);

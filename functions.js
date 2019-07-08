@@ -24,7 +24,6 @@ async function isMediaURL(string) {
 module.exports.embed = {
     dimension: {
         // returns detailed RichEmbed of entered dimension™
-
         // FIND BY ID (D O N E)
         details: async (dimensionID, msg, client) => {
             const embed = new RichEmbed()
@@ -80,6 +79,46 @@ module.exports.embed = {
                 embed.addField("**Description**", dimension.description);
                 embed.addField("**Role**", `<@&${dimension["_id"]}>`);
                 await msg.channel.send(embed);
+            }
+        },
+
+        // returns an embed, unlike details and detailedDetails
+        portalDetails: async (dimensionID, msg, client) => {
+            const embed = new RichEmbed()
+
+            // check if dimensionID is the correct format
+            if(typeof dimensionID !== 'string') {
+                embed.setTitle("**Error retrieving data!**")
+                embed.setDescription("Error getting details in \'functions.dimension.details().\' DimensionID was not a string! ME SAD ;-;! Contact developer!")
+                await msg.channel.send(embed);
+                return;
+            }
+            
+            var dimension = client.cache.dimensions.get(dimensionID);
+            if(!dimension) {
+                embed.setTitle("**Dimension is not in the database!!**")
+                embed.setDescription("This may be an error, so you might want to contact the developer!")
+                await msg.channel.send(embed);
+                return;
+            }
+            // if(dimension) not necessary but it looks neater so rip
+            if(dimension) {
+                if(isMediaURL(dimension.graphic)) {
+                    embed.setImage(dimension.graphic);
+                }
+                embed.setTitle(`__**${dimension.name}**__`)
+                // embed.setTitle("__**Dimension™ Details:**__");
+                embed.setDescription("Here's a brief description of the dimension™:");
+                embed.setThumbnail(dimension.emoji.url)
+                embed.setColor(dimension.color);
+                // embed.addField("**Name**", dimension.name);
+                embed.addField("**Description**", dimension.description);
+                embed.addField("**Role**", `<@&${dimension["_id"]}>`);
+                return {
+                    embed: embed, 
+                    emoji: dimension.emoji,
+                    role: dimension["_id"]
+                };
             }
         },
 
@@ -158,6 +197,69 @@ module.exports.embed = {
             }
         }
     },
+}
+
+module.exports.processes = {
+    refreshPortals: async (msg, client) => {
+
+        const portal = client.guilds.get(botSettings.guild).channels.get(botSettings.portal);
+
+        // 1. delete all the dimension msgs
+        const msgsToDelete = await portal.fetchMessages()
+        await portal.bulkDelete(msgsToDelete.filter(message => message.author.id == client.user.id));
+
+        const dimensions = await client.cache.dimensions.array()
+        const rrs = []
+        
+        for (var i = 0; i < dimensions.length; i++) {
+            const dimensionDetails = await this.embed.dimension.portalDetails(dimensions[i]["_id"], msg, client);
+            var reactionRole = {};
+            
+            const sentEmbed = await portal.send(dimensionDetails);
+            reactionRole["_id"] = sentEmbed.id
+            reactionRole.type = "portal"
+            reactionRole.reactionRoles = {}
+            reactionRole.reactionRoles[dimensionDetails.emoji.id] = dimensionDetails.role;
+            rrs.push(reactionRole)
+            // console.log(reactionRole)
+            sentEmbed.react(dimensionDetails.emoji.id);
+        }
+        // console.log(rrs)
+        
+        await this.db.delete.many(
+            client,
+            client.models.rrmessage,
+            {type: "portal"},
+            (err) => {console.log("There was an error trying to delete portal reaction role data in refreshPortals")},
+            (docs) => {}
+        )
+        
+
+        await this.db.add(
+            client,
+            client.models.rrmessage,
+            rrs,
+            (err) => {console.log("There was an error trying to add portal reaction role data in refreshPortals")},
+            (docs) => {}
+        )
+    },
+    teleport: async (client, dimensionID, oldMember, newMember) => {
+        // if they arent on the list then add them
+        if(client.indicators.teleporting.includes(oldMember.user.id)) return;
+        client.indicators.teleporting.push(oldMember.user.id);
+        // give teleporting role
+        const member = client.guilds.get(botSettings.guild).members.get(oldMember.user.id);
+        await member.addRole(botSettings.teleporting.role);
+        
+        
+        console.log("teleporting")
+
+
+        // remove them from the list
+        await member.removeRole(botSettings.teleporting.role);
+        client.indicators.teleporting = client.indicators.teleporting.filter(usr => usr != oldMember.user.id);
+
+    }
 }
 
 // all functions should include recaching data
@@ -280,5 +382,5 @@ module.exports.toolkit = {
     isMediaURL,
     colorChecker,
     converter,
-    botSettings
+    botSettings,
 }

@@ -4,13 +4,13 @@ const functions = require("../functions.js");
 
 module.exports.run = async (msg, client, args) => {
 
-    if(client.usingCommand.includes(msg.author.id)) {
+    if(client.indicators.usingCommand.includes(msg.author.id)) {
         await msg.channel.send("You are already using a command (setup wizard, etc.). Finish that command before starting another one. B-BAKA!!!");
         return;
     }
-    client.usingCommand.push(msg.author.id);
+    client.indicators.usingCommand.push(msg.author.id);
     function removedID() {
-        client.usingCommand = client.usingCommand.filter(user => user != msg.author.id)
+        client.indicators.usingCommand = client.indicators.usingCommand.filter(user => user != msg.author.id)
     }
 
     switch (args[0]) {
