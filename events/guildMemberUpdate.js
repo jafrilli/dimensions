@@ -20,6 +20,7 @@ module.exports.run = async (client, oldMember, newMember) => {
         if(client.cache.dimensions.keyArray().includes(addedRoles[i])) {
             doesInclude = true;
             await functions.processes.teleport(client, addedRoles[i], oldMember, newMember);
+            return;
         }
     }
 

@@ -134,38 +134,7 @@ module.exports.embed = {
                 await msg.channel.send(embed);
                 return;
             }
-            
-            // Dimension.findById(dimensionID, async (err, doc) => {
-            //     if(err) {
-            //         embed.setTitle("**Dimension is not in the database!!**")
-            //         embed.setDescription("This may be an error, so you might want to contact the developer!")
-            //         await msg.channel.send(embed);
-            //         return;
-            //     }
-            //     if(doc) {
-            //         embed.setTitle("__**Dimension™ Details:**__");
-            //         embed.setDescription("Here's a brief description of the dimension™:");
-            //         embed.setThumbnail(doc.emoji.url)
-            //         // check if doc.graphic is a url, so the app doesn't crash.
-            //         if(isMediaURL(doc.graphic)){
-            //             embed.setImage(doc.graphic);
-            //         }
-            //         embed.setColor(doc.color);
-            //         embed.addField("**Name**", doc.name, true);
-            //         embed.addField("**Role**", `<@&${doc["_id"]}>`, true);
-            //         embed.addField("**Description**", doc.description);
-            //         embed.addField("**Color #**", doc.color, true);
-            //         embed.addField("**Emoji ID**", doc.emoji.id, true);
-            //         var finalRolesString = "Roles: ";
-            //         await doc.roles.forEach((roleID) => {
-            //             finalRolesString += `<@&${roleID}>, `;
-            //         })
-            //         embed.addField("**Roles**", finalRolesString)
-            //         await msg.channel.send(embed);
-            //     }
-            //     embed.setTitle("**Dimension is not in the database!!**")
-            //     embed.setDescription("lmaooo rip xddd rawr :3")
-            // })
+
             var dimension = client.cache.dimensions.get(dimensionID);
             if(!dimension) {
                 embed.setTitle("**Dimension is not in the database!!**")
@@ -251,9 +220,13 @@ module.exports.processes = {
         const member = client.guilds.get(botSettings.guild).members.get(oldMember.user.id);
         await member.addRole(botSettings.teleporting.role);
         
-        
-        console.log("teleporting")
+        var dimensionRoles = client.cache.dimensions;
+        console.log(dimensionRoles);
+        console.log(oldMember.roles);
+        //var oldMemberClientRole = dimensionRoles.filter(role => )
+        console.log("teleporting");
 
+        
 
         // remove them from the list
         await member.removeRole(botSettings.teleporting.role);
