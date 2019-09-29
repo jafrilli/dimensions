@@ -7,11 +7,13 @@ Array.prototype.diff = function(a) {
 module.exports.run = async (client, oldMember, newMember) => {
     
     if (newMember.user.id === client.user.id) return;
+
+    // there is one of these in functions.processes.teleport. Do something about it
     if (client.indicators.teleporting.includes(oldMember.user.id)) return;
 
-    console.log("made it passed teleport check")
+    // console.log("made it passed teleport check")
 
-    // 1. make a list of all the dimension role ids
+
     const addedRoles = newMember.roles.keyArray().diff(oldMember.roles.keyArray());
     const deletedRoles = oldMember.roles.keyArray().diff(newMember.roles.keyArray());
 
@@ -20,6 +22,8 @@ module.exports.run = async (client, oldMember, newMember) => {
         if(client.cache.dimensions.keyArray().includes(addedRoles[i])) {
             doesInclude = true;
             await functions.processes.teleport(client, addedRoles[i], oldMember, newMember);
+            // var dimensionName = await client.guilds.get(botSettings.guild).roles.get(addedRoles[i]).name;
+            // console.log(`ADDED A DIMENSION ROLE: ${dimensionName}`);
             return;
         }
     }

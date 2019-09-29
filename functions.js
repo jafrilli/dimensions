@@ -1,8 +1,7 @@
-const { RichEmbed } = require("discord.js");
+const { RichEmbed, Collection } = require("discord.js");
 const isURL = require("is-url");
 const colorChecker = require("css-color-checker");
 const converter = require("hex2dec");
-const { Collection } = require("discord.js");
 const botSettings = require("./botSettings.json")
 
 async function isMediaURL(string) {
@@ -114,6 +113,7 @@ module.exports.embed = {
                 // embed.addField("**Name**", dimension.name);
                 embed.addField("**Description**", dimension.description);
                 embed.addField("**Role**", `<@&${dimension["_id"]}>`);
+                embed.addField(dimension.password ? "🔒" : "🔓", dimension.password ? "Locked" : "Open");
                 return {
                     embed: embed, 
                     emoji: dimension.emoji,
@@ -164,6 +164,41 @@ module.exports.embed = {
                 embed.addField("**Roles**", finalRolesString)
                 await msg.channel.send(embed);
             }
+        },
+        
+        // an embed for password requests
+        // UNLIKE THE OTHERS, PASSWORD REQUEST >>>>RETURNS AN EMBED<<<<, DOESNT SEND IT FOR YOU
+        passwordRequest: async (dimensionID, client) => {
+            var embed = new RichEmbed();
+            
+            // check if dimensionID is the correct format
+            if(typeof dimensionID !== 'string') {
+                embed.setTitle("**Error retrieving data!**")
+                embed.setDescription("Error getting embed from \'functions.dimension.passwordRequest().\' DimensionID was not a string! ME SAD ;-;! Contact developer!")
+                return embed;
+            }
+
+            var dimension = client.cache.dimensions.get(dimensionID);
+            if(!dimension) {
+                embed.setTitle("**Dimension is not saved in cache!!**")
+                embed.setDescription("This may be an error, so you might want to contact the developer!")
+                return embed;
+                
+            }
+
+            // if(dimension) not necessary but it looks neater so rip
+            if(dimension) {
+                embed.setTitle("__**Dimension™ Password 🔑:**__");
+                embed.setDescription("Enter the dimension™ password to be authorized access:");
+                embed.setThumbnail(dimension.emoji.url);
+                embed.setColor(dimension.color)
+                // check if doc.graphic is a url, so the app doesn't crash.
+                if(isMediaURL(dimension.graphic)){
+                    embed.setImage(dimension.graphic);
+                }
+
+                return embed;
+            }
         }
     },
 }
@@ -213,6 +248,7 @@ module.exports.processes = {
         )
     },
     teleport: async (client, dimensionID, oldMember, newMember) => {
+
         // if they arent on the list then add them
         if(client.indicators.teleporting.includes(oldMember.user.id)) return;
         client.indicators.teleporting.push(oldMember.user.id);
@@ -220,18 +256,115 @@ module.exports.processes = {
         const member = client.guilds.get(botSettings.guild).members.get(oldMember.user.id);
         await member.addRole(botSettings.teleporting.role);
         
-        var dimensionRoles = client.cache.dimensions;
-        console.log(dimensionRoles);
-        console.log(oldMember.roles);
-        //var oldMemberClientRole = dimensionRoles.filter(role => )
-        console.log("teleporting");
+        var dimensionRoles = client.cache.dimensions.keyArray();
+        // should i use newMember instead? EXCLUDE @EVERYONE
 
+        // info about the previous dimension (its id and possible roles)
+        var previousDimensionID = oldMember.roles.keyArray().filter(r => dimensionRoles.includes(r)); 
+        var previousDimensionRoles = client.cache.dimensions.get(previousDimensionID[0]).roles;
+        
+        // gets the user's previous roles (not dimension roles) and previous dimension-specific roles
+        var previousRoles = oldMember.roles.keyArray().filter((role) => !dimensionRoles.includes(role));
+        var prs = previousRoles.filter((pr) => previousDimensionRoles.includes(pr));
+
+        // 1. delete roles for that dimension on the database, and replace with these new ones
+
+        var memberData;
+        await client.models.member.findOne({_id: oldMember.user.id}, (err, doc) => {
+            if(doc) {
+                // console.log(doc);
+                memberData = doc;
+            } else {
+                memberData = {
+                    "_id": oldMember.user.id,
+                    roles: []
+                }
+            }
+            if(err) console.log(err);
+        })
+
+        if(memberData) {
+            if(memberData.roles) {
+                var withoutPreviousDimensionRoles = memberData.roles.filter((r) => !previousDimensionRoles.includes(r));
+                var newMemberRoles = withoutPreviousDimensionRoles.concat(prs);
+            }
+        }
+
+        await client.models.member.updateOne({_id: oldMember.user.id}, { roles: newMemberRoles }, {upsert: true}, (err, docs) => {
+            // if(docs) console.log(docs);
+            if(err) console.log(err);
+        })
+
+
+        // edit the roles
+        try{
+            await member.removeRoles(prs);
+        } catch(e) {
+            console.log(e);
+        }
+        try{
+            await member.removeRole(previousDimensionID[0]);
+        } catch(e) {
+            console.log(e);
+        }
+
+
+        var newPossibleDimensionRoles = client.cache.dimensions.get(dimensionID).roles;
+        var rolesToAdd = memberData.roles.filter((r) => newPossibleDimensionRoles.includes(r));
+        
+        try{
+            await member.addRoles(rolesToAdd);
+        } catch(e) {
+            console.log("sfsfwrong");
+        }
         
 
         // remove them from the list
         await member.removeRole(botSettings.teleporting.role);
         client.indicators.teleporting = client.indicators.teleporting.filter(usr => usr != oldMember.user.id);
 
+    },
+    requestPassword: async (client, user, dimensionID) => {
+        const dimension = client.cache.dimensions.get(dimensionID);
+        // KEEP AN EYE ON !dimension. I PUT IT THERE SO ALL THE OTHER RRs DONT RUN INTO AN ERROR IF THEY ARENT DIMENSIONS
+        if(!dimension) {return true}
+        if(!dimension.password) {return true}
+
+        // dm the member a prompt to enter the password
+        try {
+            var dmChannel = await user.createDM();
+        } catch (e) {
+            // make this better
+            console.log(e);
+        }
+        var passwordRequestEmbed = await this.embed.dimension.passwordRequest(dimensionID, client)
+        await dmChannel.send(passwordRequestEmbed);
+
+        var msgs = await dmChannel.awaitMessages(m => m.content, {max: 1, time: 30000});
+        var enteredPassword = msgs.first().content;
+
+        if(enteredPassword == dimension.password) {
+            await dmChannel.send("That's the right password! GG");
+            return true;
+        } else {
+            await dmChannel.send("Wrong password. Ending password wizard...");
+            return false;
+        }
+
+    },
+    scanMembers: async (client, msg) => {
+        var members = await msg.guild.members;
+        var membersData = [];
+        for (var i = 0; i < members.length; i++) {
+            var data = {};
+            data["_id"] = members[i].user.id;
+            data.roles = members[i].roles.keyArray();
+            membersData.push(data);
+        }
+        await client.models.member.create(membersData, (err, members) => {
+            if(err) console.log(err);
+
+        });
     }
 }
 

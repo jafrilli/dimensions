@@ -8,6 +8,9 @@ module.exports.run = async (msg, client, args) => {
         await msg.channel.send("You are already using a command (setup wizard, etc.). Finish that command before starting another one. B-BAKA!!!");
         return;
     }
+
+    if(msg.channel.type == 'dm') return;
+    
     client.indicators.usingCommand.push(msg.author.id);
     function removedID() {
         client.indicators.usingCommand = client.indicators.usingCommand.filter(user => user != msg.author.id)
@@ -307,6 +310,8 @@ async function dimensionCreate(msg, client, args) {
     
     newDimension["_id"] = newRole.id;
     newDimension.roles = [];
+    newDimension.dateCreated = new Date();
+    newDimension.password = null;
 
     // Rich embed (finalizing)
     const dimensionEmbed = new RichEmbed({
@@ -404,7 +409,8 @@ async function dimensionUpdate(msg, client, args) {
         "description",
         "color",
         "emoji",
-        "graphic"
+        "graphic",
+        "password"
     ]
     var whatToUpdateAttempted = false;
     do {
@@ -420,7 +426,8 @@ async function dimensionUpdate(msg, client, args) {
                 {name: "Description", value: "Description of the dimension™", inline: true},
                 {name: "Color", value: "Color of the dimension™ (including role)", inline: true},
                 {name: "Emoji", value: "Emoji of the dimension™", inline: true},
-                {name: "Graphic", value: "Graphic of the dimension™ (not an option during creation)", inline: true}
+                {name: "Graphic", value: "Graphic of the dimension™ (not an option during creation)", inline: true},
+                {name: "Password", value: "Password of the dimension™ (not an option during creation)", inline: true}
             ]
         }))
         try {
@@ -453,6 +460,10 @@ async function dimensionUpdate(msg, client, args) {
         case "graphic": 
             await updateFunctions.updateGraphic(selectedDimensionID, msg, client);
             // console.log("graphic")
+            break;
+        case "password": 
+            await updateFunctions.updatePassword(selectedDimensionID, msg, client);
+            // console.log("password")
             break;
         default: 
             console.log("super weird error. you should literally never get this. like ever")
@@ -947,5 +958,45 @@ var updateFunctions = {
                 // await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
             }
         );
-    }
+    },
+    updatePassword: async (dimensionID, msg, client) => {
+
+        await msg.channel.send(new RichEmbed({title: `__**Update Dimension™: Password**__`, description: `Enter the new \'password\' of the <@&${dimensionID}> dimension™:`, footer: {text: "Type \'quit\' to quit wizard..."}}))
+        try {
+            var dimensionPassword = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+        } catch(err) {
+            console.log("ERROR UPDATING DIMENSION - PASSWORD: \n" + err)
+        }
+        if(dimensionPassword.first().content === "quit") {msg.channel.send("You quit the dimensions™ update wizard."); return }
+        var updatedPassword = dimensionPassword.first().content.toString();
+
+        // Dimension.updateOne({_id: dimensionID}, {name: updatedName}, async (err, rawResponse) => {
+        //     if(err) {
+        //         console.log("ERROR UPDATING DIMENSION - NAME (DB VERSION): \n" + err)
+        //         await msg.channel.send("There was an issue updating the name on the database ;-;. Contact the developer...");
+        //         return;
+        //     }
+        //     if(rawResponse) {
+        //         // success
+        //         await msg.guild.roles.get(dimensionID).edit({name: `『${updatedName}』`})
+        //         await msg.channel.send("Successfully updated the name <3");
+        //         await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+        //     }
+        // })
+        functions.db.update.one(
+            client,
+            client.models.dimension, 
+            {_id: dimensionID}, 
+            {password: updatedPassword},
+            async (err) => {
+                console.log("ERROR UPDATING DIMENSION - PASSWORD (DB VERSION): \n" + err)
+                await msg.channel.send("There was an issue updating the password on the database ;-;. Contact the developer...");
+            },
+            async (doc) => {
+                await msg.channel.send("Successfully updated the password <3")
+                // await functions.embed.dimension.detailedDetails(dimensionID, msg, client);
+            }
+        )
+
+    },
 }

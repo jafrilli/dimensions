@@ -7,6 +7,9 @@ module.exports.run = async (msg, client, args) => {
         await msg.channel.send("You are already using a command (setup wizard, etc.). Finish that command before starting another one. B-BAKA!!!");
         return;
     }
+
+    if(msg.channel.type == 'dm') return;
+
     client.indicators.usingCommand.push(msg.author.id);
     function removedID() {
         client.indicators.usingCommand = client.indicators.usingCommand.filter(user => user != msg.author.id)

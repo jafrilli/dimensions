@@ -5,6 +5,8 @@ const dimensionSchema = mongoose.Schema({
     name: String,
     description: String,
     color: Number,
+    password: String,
+    dateCreated: Date,
     emoji: {
         url: String,
         id: String,

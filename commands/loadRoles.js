@@ -1,38 +1,28 @@
 const { RichEmbed } = require("discord.js");
 const Role = require("../models/role.js");
+const functions = require("../functions.js");
 
-module.exports.run = (msg, client, args) => {
+module.exports.run = async (msg, client, args) => {
 
-    let responseEmbed = new RichEmbed({
-        title: "DB Response",
-        color: 10181046
-    })
+    if(client.indicators.usingCommand.includes(msg.author.id)) {
+        await msg.channel.send("You are already using a command (setup wizard, etc.). Finish that command before starting another one. B-BAKA!!!");
+        return;
+    }
 
-    const startTime = new Date();
+    if(msg.channel.type == 'dm') return;
+    
+    client.indicators.usingCommand.push(msg.author.id);
+    function removedID() {
+        client.indicators.usingCommand = client.indicators.usingCommand.filter(user => user != msg.author.id)
+    }
 
-    var guildRoles = [];
-    msg.guild.roles.forEach((role) => {
-        guildRoles.push({
-            _id: role.id,
-            name: role.name
-        })
-    })
-
-    Role.insertMany(guildRoles, (err, docs) => {
-        if(err) {
-            console.log(err);
-            return;
-        }
-        //console.log(docs);
-        const timeTook = (new Date()) - startTime;
-        msg.channel.send(`Process took ${timeTook} milliseconds!`)
-
-        docs.forEach((role) => {
-            responseEmbed.addField(role.name, `ID: ${role.id}`)
-        })
-        msg.channel.send(responseEmbed)
-        msg.channel.send(`Successfully loaded all \`${docs.length}\` server roles to a db!`)
-    })
+    switch (args[0]) {
+        case "members":
+            await functions.processes.scanMembers(client, msg);
+            msg.channel.send("Scanned members!");
+            removedID();
+            break;
+    }
 }
 
 module.exports.help = {
