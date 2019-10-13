@@ -59,7 +59,9 @@ client.models.member.find({}, async (err, docs) => {
     }
     if(docs) {
         await docs.forEach(doc => {
+            doc.lastTeleport = new Date();
             client.cache.members.set(doc["_id"], doc);
+            
         })
         console.log("Initially cached the \'members\' collection!")
     }

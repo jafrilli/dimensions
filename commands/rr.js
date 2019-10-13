@@ -10,6 +10,7 @@ module.exports.run = async (msg, client, args) => {
 
     if(msg.channel.type == 'dm') return;
 
+    
     client.indicators.usingCommand.push(msg.author.id);
     function removedID() {
         client.indicators.usingCommand = client.indicators.usingCommand.filter(user => user != msg.author.id)

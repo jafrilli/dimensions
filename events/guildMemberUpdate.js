@@ -7,6 +7,8 @@ Array.prototype.diff = function(a) {
 module.exports.run = async (client, oldMember, newMember) => {
     
     if (newMember.user.id === client.user.id) return;
+    if (oldMember.user.bot) return;
+
 
     // there is one of these in functions.processes.teleport. Do something about it
     if (client.indicators.teleporting.includes(oldMember.user.id)) return;

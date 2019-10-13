@@ -114,6 +114,11 @@ module.exports.embed = {
                 embed.addField("**Description**", dimension.description);
                 embed.addField("**Role**", `<@&${dimension["_id"]}>`);
                 embed.addField(dimension.password ? "🔒" : "🔓", dimension.password ? "Locked" : "Open");
+                var finalRolesString = "Roles: ";
+                await dimension.roles.forEach((roleID) => {
+                    finalRolesString += `<@&${roleID}>, `;
+                })
+                embed.addField("**Roles**", finalRolesString)
                 return {
                     embed: embed, 
                     emoji: dimension.emoji,
@@ -201,6 +206,16 @@ module.exports.embed = {
             }
         }
     },
+    errors: {
+        catch: async (err, client) => {
+            var embed = new RichEmbed();
+            embed.setTitle("Try/Catch Error @ " + err.stack.substring(0,200));
+            embed.addField("Error Type", err.name.substring(0,200));
+            embed.addField("Error Description", err.message.substring(0,200));
+            
+            client.guilds.get(botSettings.guild).channels.get(botSettings.error).send(embed);
+        }
+    }
 }
 
 module.exports.processes = {
@@ -261,8 +276,18 @@ module.exports.processes = {
 
         // info about the previous dimension (its id and possible roles)
         var previousDimensionID = oldMember.roles.keyArray().filter(r => dimensionRoles.includes(r)); 
-        var previousDimensionRoles = client.cache.dimensions.get(previousDimensionID[0]).roles;
-        
+        var previousDimensionRoles; 
+        if(client.cache.dimensions.get(previousDimensionID[0])) {
+            if(client.cache.dimensions.get(previousDimensionID[0]).roles) {
+              previousDimensionRoles = client.cache.dimensions.get(previousDimensionID[0]).roles;
+            }
+            else {
+                previousDimensionRoles = [];
+            }
+        }
+        else {
+            previousDimensionRoles = [];
+        }
         // gets the user's previous roles (not dimension roles) and previous dimension-specific roles
         var previousRoles = oldMember.roles.keyArray().filter((role) => !dimensionRoles.includes(role));
         var prs = previousRoles.filter((pr) => previousDimensionRoles.includes(pr));
@@ -270,18 +295,27 @@ module.exports.processes = {
         // 1. delete roles for that dimension on the database, and replace with these new ones
 
         var memberData;
-        await client.models.member.findOne({_id: oldMember.user.id}, (err, doc) => {
-            if(doc) {
-                // console.log(doc);
-                memberData = doc;
-            } else {
-                memberData = {
-                    "_id": oldMember.user.id,
-                    roles: []
+        try {
+            await client.models.member.findOne({_id: oldMember.user.id}, (err, doc) => {
+                if(doc) {
+                    // console.log(doc);
+                    memberData = doc;
+                } else {
+                    memberData = {
+                        "_id": oldMember.user.id,
+                        roles: []
+                    }
                 }
+                if(err) console.log(err);
+            })
+        } catch (error) {
+            this.embed.errors.catch(error, client);
+            memberData = {
+                "_id": oldMember.user.id,
+                roles: []
             }
-            if(err) console.log(err);
-        })
+        }
+        
 
         if(memberData) {
             if(memberData.roles) {
@@ -290,22 +324,27 @@ module.exports.processes = {
             }
         }
 
-        await client.models.member.updateOne({_id: oldMember.user.id}, { roles: newMemberRoles }, {upsert: true}, (err, docs) => {
-            // if(docs) console.log(docs);
-            if(err) console.log(err);
-        })
+        try {
+            await client.models.member.updateOne({_id: oldMember.user.id}, { roles: newMemberRoles }, {upsert: true}, (err, docs) => {
+                // if(docs) console.log(docs);
+                if(err) console.log(err);
+            })
+        } catch (error) {
+            this.embed.errors.catch(error, client);
+        }
+        
 
 
         // edit the roles
         try{
             await member.removeRoles(prs);
         } catch(e) {
-            console.log(e);
+            this.embed.errors.catch(e, client);
         }
         try{
             await member.removeRole(previousDimensionID[0]);
         } catch(e) {
-            console.log(e);
+            this.embed.errors.catch(e, client);
         }
 
 
@@ -315,13 +354,18 @@ module.exports.processes = {
         try{
             await member.addRoles(rolesToAdd);
         } catch(e) {
-            console.log("sfsfwrong");
+            this.embed.errors.catch(e, client);
         }
         
 
         // remove them from the list
-        await member.removeRole(botSettings.teleporting.role);
-        client.indicators.teleporting = client.indicators.teleporting.filter(usr => usr != oldMember.user.id);
+        try { 
+            await member.removeRole(botSettings.teleporting.role);
+            client.indicators.teleporting = client.indicators.teleporting.filter(usr => usr != oldMember.user.id);
+        } catch (error) {
+            console.log(error);
+            this.embed.errors.catch(error, client);
+        }
 
     },
     requestPassword: async (client, user, dimensionID) => {
