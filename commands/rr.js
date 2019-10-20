@@ -1,5 +1,6 @@
 const { RichEmbed } = require("discord.js");
 const functions = require("../functions.js");
+const {graphics} = require("../graphics.js");
 
 module.exports.run = async (msg, client, args) => {
     
@@ -25,6 +26,10 @@ module.exports.run = async (msg, client, args) => {
             await rrLink(msg, client, args);
             removedID();
             break;
+        case "buffer":
+            await graphicTest(msg, client, args);
+            removedID();
+            break;
         default:    
             await msg.channel.send(`That was an invalid argument. Try again dumbass <@${msg.author.id}>`)
             removedID();
@@ -38,4 +43,13 @@ module.exports.help = {
 
 async function rrLink(msg, client, args) {
     await functions.processes.refreshPortals(msg, client)
+}
+
+function graphicTest(msg, client, args) {
+    graphics.dimension().then(buffer => {
+        console.log(buffer)
+        msg.channel.send(" ", {file: buffer});
+    }).catch(error => {
+        functions.embed.errors.catch(error);
+    })
 }

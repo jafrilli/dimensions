@@ -59,6 +59,7 @@ client.models.member.find({}, async (err, docs) => {
     }
     if(docs) {
         await docs.forEach(doc => {
+            // for the teleport cooldown feature
             doc.lastTeleport = new Date();
             client.cache.members.set(doc["_id"], doc);
             

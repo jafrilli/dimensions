@@ -271,11 +271,11 @@ module.exports.processes = {
         const member = client.guilds.get(botSettings.guild).members.get(oldMember.user.id);
         await member.addRole(botSettings.teleporting.role);
         
-        var dimensionRoles = client.cache.dimensions.keyArray();
+        var dimensionsIDs = client.cache.dimensions.keyArray();
         // should i use newMember instead? EXCLUDE @EVERYONE
 
         // info about the previous dimension (its id and possible roles)
-        var previousDimensionID = oldMember.roles.keyArray().filter(r => dimensionRoles.includes(r)); 
+        var previousDimensionID = oldMember.roles.keyArray().filter(r => dimensionsIDs.includes(r)); 
         var previousDimensionRoles; 
         if(client.cache.dimensions.get(previousDimensionID[0])) {
             if(client.cache.dimensions.get(previousDimensionID[0]).roles) {
@@ -289,7 +289,7 @@ module.exports.processes = {
             previousDimensionRoles = [];
         }
         // gets the user's previous roles (not dimension roles) and previous dimension-specific roles
-        var previousRoles = oldMember.roles.keyArray().filter((role) => !dimensionRoles.includes(role));
+        var previousRoles = oldMember.roles.keyArray().filter((role) => !dimensionsIDs.includes(role));
         var prs = previousRoles.filter((pr) => previousDimensionRoles.includes(pr));
 
         // 1. delete roles for that dimension on the database, and replace with these new ones
@@ -299,6 +299,7 @@ module.exports.processes = {
             await client.models.member.findOne({_id: oldMember.user.id}, (err, doc) => {
                 if(doc) {
                     // console.log(doc);
+                    doc.roles = doc.roles ? doc.roles : [];
                     memberData = doc;
                 } else {
                     memberData = {
@@ -315,7 +316,7 @@ module.exports.processes = {
                 roles: []
             }
         }
-        
+        console.log(memberData);
 
         if(memberData) {
             if(memberData.roles) {
@@ -349,6 +350,7 @@ module.exports.processes = {
 
 
         var newPossibleDimensionRoles = client.cache.dimensions.get(dimensionID).roles;
+        console.log(memberData.roles);
         var rolesToAdd = memberData.roles.filter((r) => newPossibleDimensionRoles.includes(r));
         
         try{
