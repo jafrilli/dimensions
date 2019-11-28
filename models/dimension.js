@@ -7,6 +7,7 @@ const dimensionSchema = mongoose.Schema({
     color: Number,
     password: String,
     dateCreated: Date,
+    officerRole: String,
     emoji: {
         url: String,
         id: String,

@@ -18,19 +18,27 @@ module.exports.run = async (client, reaction, user) => {
         if(!keys.includes(reaction.emoji.id)) {console.log("DOESNT HAVE IT..."); return;};
         
         // check if the cooldown is finished (10 seconds)
-        if(new Date() - client.cache.members.get(user.id).lastTeleport > 15000) {
-            var authorized = await functions.processes.requestPassword(client,user,rrmsg.reactionRoles[reaction.emoji.id]);
+        if(new Date() - client.cache.members.get(user.id).lastTeleport > 20000) {
+            // checks if user is banned
+            if(client.cache.dimensions.get(rrmsg.reactionRoles[reaction.emoji.id]).bans.includes(user.id)) {
+                var bannedEmbed = functions.embed.dimension.bannedEmbed(rrmsg.reactionRoles[reaction.emoji.id], client);
+                var dmCh = await user.createDM();
+                reaction.remove(user);
+                return dmCh.send(bannedEmbed);
+            }
 
+            // authorization check
+            var authorized = await functions.processes.requestPassword(client,user,rrmsg.reactionRoles[reaction.emoji.id]);
             if(authorized) {
                 await client.guilds.get(botSettings.guild).members.get(user.id).addRole(rrmsg.reactionRoles[reaction.emoji.id]);
-
             }
+
         } else {
-            console.log(new Date() - client.cache.members.get(user.id).lastTeleport);
+            // console.log(new Date() - client.cache.members.get(user.id).lastTeleport);
             var dmChannel = await user.createDM();
             await dmChannel.send(
                 "You need to wait " + 
-                Math.round((15000 - (new Date() - client.cache.members.get(user.id).lastTeleport))/1000) + 
+                Math.round((20000 - (new Date() - client.cache.members.get(user.id).lastTeleport))/1000) + 
                 " seconds before you can teleport again ;-;"
             );
         }

@@ -81,6 +81,7 @@ module.exports.embed = {
             }
         },
 
+        //TODO: Make this return an embed WITHOUT the use of 'msg'
         // returns an embed, unlike details and detailedDetails
         portalDetails: async (dimensionID, msg, client) => {
             const embed = new RichEmbed()
@@ -114,7 +115,8 @@ module.exports.embed = {
                 embed.addField("**Description**", dimension.description);
                 embed.addField("**Role**", `<@&${dimension["_id"]}>`);
                 embed.addField(dimension.password ? "🔒" : "🔓", dimension.password ? "Locked" : "Open");
-                var finalRolesString = "Roles: ";
+                embed.addField("**Officer Role**", dimension.officerRole ? `<@&${dimension.officerRole}>` : "No Officer Role")
+                var finalRolesString = "";
                 await dimension.roles.forEach((roleID) => {
                     finalRolesString += `<@&${roleID}>, `;
                 })
@@ -162,6 +164,7 @@ module.exports.embed = {
                 embed.addField("**Description**", dimension.description);
                 embed.addField("**Color #**", dimension.color, true);
                 embed.addField("**Emoji ID**", dimension.emoji.id, true);
+                embed.addField("**Officer Role**", dimension.officerRole ? `<@&${dimension.officerRole}>` : "No Officer Role")
                 var finalRolesString = "Roles: ";
                 await dimension.roles.forEach((roleID) => {
                     finalRolesString += `<@&${roleID}>, `;
@@ -195,6 +198,39 @@ module.exports.embed = {
             if(dimension) {
                 embed.setTitle("__**Dimension™ Password 🔑:**__");
                 embed.setDescription("Enter the dimension™ password to be authorized access:");
+                embed.setThumbnail(dimension.emoji.url);
+                embed.setColor(dimension.color)
+                // check if doc.graphic is a url, so the app doesn't crash.
+                if(isMediaURL(dimension.graphic)){
+                    embed.setImage(dimension.graphic);
+                }
+
+                return embed;
+            }
+        },
+
+        bannedEmbed: (dimensionID, client) => {
+            var embed = new RichEmbed();
+            
+            // check if dimensionID is the correct format
+            if(typeof dimensionID !== 'string') {
+                embed.setTitle("**Error retrieving data!**")
+                embed.setDescription("Error getting embed from \'functions.dimension.bannedEmbed().\' DimensionID was not a string! ME SAD ;-;! Contact developer!")
+                return embed;
+            }
+
+            var dimension = client.cache.dimensions.get(dimensionID);
+            if(!dimension) {
+                embed.setTitle("**Dimension is not saved in cache!!**")
+                embed.setDescription("This may be an error, so you might want to contact the developer!")
+                return embed;
+                
+            }
+
+            // if(dimension) not necessary but it looks neater so rip
+            if(dimension) {
+                embed.setTitle("__**Dimension™ Notification: You've been banned 😢**__");
+                embed.setDescription("Damn, you got banned! Feel free to talk to an officer to explain your situation. The officers __should__ be open minded! - **Overlords**");
                 embed.setThumbnail(dimension.emoji.url);
                 embed.setColor(dimension.color)
                 // check if doc.graphic is a url, so the app doesn't crash.
@@ -316,7 +352,6 @@ module.exports.processes = {
                 roles: []
             }
         }
-        console.log(memberData);
 
         if(memberData) {
             if(memberData.roles) {
@@ -350,7 +385,6 @@ module.exports.processes = {
 
 
         var newPossibleDimensionRoles = client.cache.dimensions.get(dimensionID).roles;
-        console.log(memberData.roles);
         var rolesToAdd = memberData.roles.filter((r) => newPossibleDimensionRoles.includes(r));
         
         try{

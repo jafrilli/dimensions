@@ -29,7 +29,7 @@ client.models = {
 }
 
 
-mongoose.connect('mongodb://localhost:27017/dimensionsDB', { useNewUrlParser: true })
+mongoose.connect('mongodb://localhost:27017/dimensionsDB', { useNewUrlParser: true, useUnifiedTopology: true })
     .then(console.log("\nSUCCESSFULLY CONNECTED TO MONGO DB"))
     .catch(err => {
         if(err) {
