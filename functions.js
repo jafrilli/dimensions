@@ -115,7 +115,9 @@ module.exports.embed = {
                 embed.addField("**Description**", dimension.description);
                 embed.addField("**Role**", `<@&${dimension["_id"]}>`);
                 embed.addField(dimension.password ? "🔒" : "🔓", dimension.password ? "Locked" : "Open");
-                embed.addField("**Officer Role**", dimension.officerRole ? `<@&${dimension.officerRole}>` : "No Officer Role")
+                if(dimension.officerRole) { 
+                    embed.addField("**Officer Role**",  `<@&${dimension.officerRole}>`);
+                }
                 var finalRolesString = "";
                 await dimension.roles.forEach((roleID) => {
                     finalRolesString += `<@&${roleID}>, `;
@@ -173,7 +175,49 @@ module.exports.embed = {
                 await msg.channel.send(embed);
             }
         },
-        
+
+        // announcementObject should look like this
+        /*
+            {
+                text: "",
+                graphic: ""
+            }
+        */
+        announcementEmbed: async (dimensionID, msg, client, announcementObject) => {
+            const embed = new RichEmbed();
+
+            // check if dimensionID is the correct format
+            if(typeof dimensionID !== 'string') {
+                embed.setTitle("**Error retrieving data!**")
+                embed.setDescription("Error getting details in \'functions.dimension.details().\' DimensionID was not a string! ME SAD ;-;! Contact developer!")
+                await msg.channel.send(embed);
+                return;
+            }
+
+            var dimension = client.cache.dimensions.get(dimensionID);
+            if(!dimension) {
+                embed.setTitle("**Dimension is not in the database!!**")
+                embed.setDescription("This may be an error, so you might want to contact the developer!")
+                await msg.channel.send(embed);
+                return;
+            }
+            // if(dimension) not necessary but it looks neater so rip
+            if(dimension) {
+                embed.setTitle(`__**Announcement from ${dimension.name}™:**__`);
+                embed.setThumbnail(dimension.emoji.url);
+                if(announcementObject.text) {
+                    embed.setDescription(announcementObject.text);
+                }
+                // check if doc.graphic is a url, so the app doesn't crash.
+                if(announcementObject.graphic) {
+                    if(isMediaURL(announcementObject.graphic)){
+                        embed.setImage(announcementObject.graphic);
+                    }
+                }
+                embed.setColor(dimension.color);
+            }
+            return embed;
+        },
         // an embed for password requests
         // UNLIKE THE OTHERS, PASSWORD REQUEST >>>>RETURNS AN EMBED<<<<, DOESNT SEND IT FOR YOU
         passwordRequest: async (dimensionID, client) => {
@@ -229,7 +273,7 @@ module.exports.embed = {
 
             // if(dimension) not necessary but it looks neater so rip
             if(dimension) {
-                embed.setTitle("__**Dimension™ Notification: You've been banned 😢**__");
+                embed.setTitle("__**Dimension™ Notification: You've been banned!**__");
                 embed.setDescription("Damn, you got banned! Feel free to talk to an officer to explain your situation. The officers __should__ be open minded! - **Overlords**");
                 embed.setThumbnail(dimension.emoji.url);
                 embed.setColor(dimension.color)
@@ -432,6 +476,7 @@ module.exports.processes = {
         }
 
     },
+    // idek where i use this tbh
     scanMembers: async (client, msg) => {
         var members = await msg.guild.members;
         var membersData = [];

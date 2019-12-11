@@ -1,6 +1,7 @@
 const { RichEmbed, Role, Collection } = require("discord.js");
 const functions = require("../functions.js");
 const df = require("../classes/dimensionFuncs.js");
+const botSettings = require("../botSettings.json");
 
 // enum equivalent of javascript
 
@@ -378,9 +379,24 @@ async function dimensionCreate(msg, client, args) {
         client,
         newDimension,
         (err) => {console.log("ERROR WHEN SAVING DIMENSION USING DIMENSION CREATE: \n" + err);},
-        (docs) => {msg.channel.send(`Successfully created the \'${docs.name}\' dimension!`)}
+        (docs) => {msg.channel.send(`Successfully created the <@&${newDimension["_id"]}> dimension!`)}
     );
-
+    
+    //? RECENTLY ADDED: Automatically makes a new category and starter channel
+    msg.guild.createChannel(newDimension.name, {
+        type: 'category',
+        permissionOverwrites: [
+            {
+                id: newDimension["_id"],
+                allow: ['READ_MESSAGES', 'SEND_MESSAGES']
+            },
+            {
+                id: botSettings.guild,
+                deny: ['READ_MESSAGES', 'SEND_MESSAGES']
+            }
+        ]
+    });
+    msg.channel.send(`Successfully created a category for the <@&${newDimension["_id"]}> dimension! Now you just gotta add more channels`);
 }
 
 // >FIND< {} (D O N E)
