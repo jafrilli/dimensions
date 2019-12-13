@@ -122,7 +122,7 @@ module.exports.embed = {
                 await dimension.roles.forEach((roleID) => {
                     finalRolesString += `<@&${roleID}>, `;
                 })
-                embed.addField("**Roles**", finalRolesString)
+                embed.addField("**Obtainable Roles**", finalRolesString != "" ? finalRolesString : "No Roles...")
                 return {
                     embed: embed, 
                     emoji: dimension.emoji,
@@ -280,6 +280,41 @@ module.exports.embed = {
                 // check if doc.graphic is a url, so the app doesn't crash.
                 if(isMediaURL(dimension.graphic)){
                     embed.setImage(dimension.graphic);
+                }
+
+                return embed;
+            }
+        },
+
+        welcomeEmbed: (dimensionID, client, member) => {
+            var dimension = client.cache.dimensions.get(dimensionID);
+            
+            var embed = new RichEmbed();
+            
+            // check if dimensionID is the correct format
+            if(typeof dimensionID !== 'string') {
+                embed.setTitle("**Error retrieving data!**")
+                embed.setDescription("Error getting embed from \'functions.dimension.welcomeEmbed().\' DimensionID was not a string! ME SAD ;-;! Contact developer!")
+                return embed;
+            }
+
+            var dimension = client.cache.dimensions.get(dimensionID);
+            if(!dimension) {
+                embed.setTitle("**Dimension is not saved in cache!!**")
+                embed.setDescription("This may be an error, so you might want to contact the developer!")
+                return embed;
+                
+            }
+
+            // if(dimension) not necessary but it looks neater so rip
+            if(dimension.welcome) {
+                embed.setTitle(dimension.welcome.embed.title ? dimension.welcome.embed.title.replace("<<user>>", member.user.username) : null,);
+                embed.setDescription(dimension.welcome.embed.description ? dimension.welcome.embed.description.replace("<<user>>", `<@${member.id}>`) : null);
+                embed.setThumbnail(member.user.avatarURL);
+                embed.setColor(dimension.color)
+                // check if doc.graphic is a url, so the app doesn't crash.
+                if(isMediaURL(dimension.welcome.embed.graphic)){
+                    embed.setImage(dimension.welcome.embed.graphic);
                 }
 
                 return embed;
@@ -490,7 +525,7 @@ module.exports.processes = {
             if(err) console.log(err);
 
         });
-    }
+    },
 }
 
 // all functions should include recaching data

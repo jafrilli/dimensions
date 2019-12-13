@@ -15,7 +15,22 @@ const dimensionSchema = mongoose.Schema({
     },
     graphic: String,
     bans: Array,
-    roles: Array
+    roles: Array,
+    // extra
+    welcome: {
+        // to mention the user, use <<user>>
+        channel: String,
+        embed: {
+            title: String,
+            description: String,
+            graphic: String,
+            // footer: {
+            //     text: String,
+            //     icon: String,
+            // }
+        },
+
+    }
 })
 
 module.exports = mongoose.model('dimension', dimensionSchema, 'dimensions');

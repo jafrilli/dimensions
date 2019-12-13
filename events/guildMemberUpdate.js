@@ -1,5 +1,7 @@
 const botSettings = require("../botSettings.json"); 
 const functions = require("../functions.js");
+const dc = require("../classes/dimensionCallbacks.js");
+
 Array.prototype.diff = function(a) {
     return this.filter(function(i) {return a.indexOf(i) < 0;});
 }; 
@@ -26,6 +28,7 @@ module.exports.run = async (client, oldMember, newMember) => {
             // resets the cooldown timer, and teleports the user
             await functions.processes.teleport(client, addedRoles[i], oldMember, newMember);
             client.cache.members.get(oldMember.user.id).lastTeleport = new Date();
+            dc.onDimensionEnter(client, addedRoles[i], newMember);
             // var dimensionName = await client.guilds.get(botSettings.guild).roles.get(addedRoles[i]).name;
             // console.log(`ADDED A DIMENSION ROLE: ${dimensionName}`);
             return;
