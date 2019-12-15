@@ -9,7 +9,7 @@ module.exports = {
         if(dimension.welcome) {
             var welcomeChannel = client.guilds.get(botSettings.guild).channels.get(dimension.welcome.channel);
             var welcomeEmbed = await functions.embed.dimension.welcomeEmbed(newDimensionID, client, member);
-            if(welcomeEmbed) {
+            if(welcomeEmbed && welcomeChannel) {  
                 welcomeChannel.send(welcomeEmbed);
             }
         }

@@ -18,11 +18,13 @@ module.exports.run = async (msg, client, args) => {
     // 1. checks if user is an officer, or has an officer role
     // 2. sets the officer's dimension to officerDimension
     var officerDimension;
+    var officerRole;
     for(var i = 0; i < client.cache.dimensions.keyArray().length; i++) {
         var currentDimension = client.cache.dimensions.array()[i];
         if(currentDimension.officerRole) {
             if(msg.member.roles.keyArray().includes(currentDimension.officerRole)) {
                 officerDimension = currentDimension["_id"];
+                officerRole = currentDimension.officerRole;
                 break;
             }
         }
@@ -38,7 +40,7 @@ module.exports.run = async (msg, client, args) => {
 
     switch (args[0]) {
         case "ban":
-            await dimensionBan(msg, client, args, officerDimension);
+            await dimensionBan(msg, client, args, officerDimension, officerRole);
             removedID();
             break;
         case "unban":
@@ -53,8 +55,24 @@ module.exports.run = async (msg, client, args) => {
             await dimensionWelcomeMessage(msg, client, args, officerDimension);
             removedID();
             break;
+        case "create":
+            await createDimensionRole(msg, client, args, officerDimension);
+            removedID();
+            break;
+        case "remove":
+            await removeDimensionRole(msg, client, args, officerDimension, officerRole);
+            removedID();
+            break;
+        case "reposition":
+            await repositionRole(msg, client, args, officerDimension, officerRole);
+            removedID();
+            break;
+        case "help":
+            await modHelp(msg, client, args, officerDimension);
+            removedID();
+            break;
         default:
-            await msg.channel.send(`That was an invalid argument. Try again dumbass <@${msg.author.id}>`)
+            await msg.channel.send(`That was an invalid argument. Use \'>mod help\' to see different commands.`)
             removedID();
             return;
     }
@@ -65,12 +83,14 @@ module.exports.help = {
 }
 
 
-async function dimensionBan(msg, client, args, officerDimension) {
+async function dimensionBan(msg, client, args, officerDimension, officerRole) {
     var errorMsg = `Please mention the user you want to ban from <@&${officerDimension}> after the command. EX: \'>manage ban @someone\'`
     if(msg.mentions.users.size < 1) return msg.channel.send(errorMsg);
     var userToBan = msg.mentions.users.first().id;
     if(userToBan == msg.author.id) return msg.channel.send("u cant ban urself dumbass");
-
+    if(client.guilds.get(botSettings.guild).members.get(userToBan).roles.keyArray().includes(officerRole)) {
+        return msg.channel.send("You can't ban another officer!")
+    }
     await df.dimensionUpdate(
         client, 
         officerDimension,
@@ -245,6 +265,177 @@ async function dimensionWelcomeMessage(msg, client, args, officerDimension) {
     );
 }
 
+async function createDimensionRole(msg, client, args, officerDimension) {
+
+    var roleName = await wizard.type.text(
+        msg,
+        client,
+        false,
+        null,
+        {
+            title: "__**New Dimension™ Role: Name**__",
+            description: "Type the name of the new role."
+        },
+        {
+            title: "__**New Dimension™ Role: Name**__",
+            description: "Type the name of the new role."
+        },
+    )
+    if(roleName === false) return msg.channel.send("Ended dimension™ role creation.")
+
+    var roleColor = await wizard.type.color(
+        msg,
+        client,
+        true,
+        null,
+        {
+            title: "__**New Dimension™ Role: Color**__",
+            description: "Enter the hex \'color\' of the new role IN THIS FORMAT: \'#000000\'. This will also be the color of your dimension role."
+        },
+        {
+            title: "__**New Dimension™ Role: Color**__",
+            description: "Needs to be a valid hex color. You need to add the hashtag (#), plus 6 digits. You can skip this step by typing \'skip\'."
+        },
+    )
+    if(roleColor === false) return msg.channel.send("Ended dimension™ role creation.")
+    if(roleColor != null) roleColor = parseInt(functions.toolkit.converter.hexToDec(roleColor.replace("#", "0x")));
+
+
+    var rolePositionObj = await wizard.type.positionedDimensionRole(
+        msg,
+        client,
+        officerDimension,
+        {
+            title: "__**New Dimension™ Role: Placement**__",
+            description: "Type the __**name**__ of the role the new role should be placed under. By that logic, you can't place roles higher than the officer role."
+        },
+        {
+            title: "__**New Dimension™ Role: Placement**__",
+            description: "Invalid input! You should type the __**name**__ of one of these roles the new role should be placed under. By that logic, you can't place roles higher than the officer role."
+        }
+    );
+    if(rolePositionObj === false) return msg.channel.send("Ended dimension™ role creation.");
+
+    try{
+        var newRole = await msg.guild.createRole({
+            name: roleName,
+            color: roleColor,
+            mentionable: false,
+            position: rolePositionObj.calculatedPosition,
+            hoist: true,
+        })
+    } catch (err) {
+        functions.embed.errors.catch(err, client);
+        console.log("There was an issue creating a role (officer role creation)");
+        return;
+    }
+
+    await df.dimensionUpdate(
+        client,
+        officerDimension,
+        "roles",
+        newRole.id,
+        (err) => {console.log("Could not add new role made by officer to db")},
+        (doc) => {msg.channel.send(`Successfully created the <@&${newRole.id}> role for the <@&${officerDimension}> dimension!`)},
+        true,
+        false
+    )
+}
+
+async function removeDimensionRole(msg, client, args, officerDimension, officerRole) {
+    
+    var roleToDelete = await wizard.type.positionedDimensionRole(
+        msg,
+        client,
+        officerDimension,
+        {
+            title: "__**Remove Dimension™ Role**__",
+            description: `Type the __**name**__ of the role you want to remove from the <@&${officerDimension}> dimension™. You obviously cannot delete the officer role, even though it's on the list.`
+        },
+        {
+            title: "__**Remove Dimension™ Role**__",
+            description: "Type the __**name**__ of the role you want to remove from your dimension™. You obviously cannot delete the officer role, even though it's on the list."
+        }
+    );
+    if(roleToDelete === false) return msg.channel.send("Ended dimension™ role deletion.");
+    
+    if(roleToDelete.id == officerRole) return msg.channel.send("You cannot remove the officer role! Ended wizard.")
+
+    await df.dimensionUpdate(
+        client,
+        officerDimension,
+        "roles",
+        roleToDelete.id,
+        (err) => {functions.embed.errors.catch(err, client)},
+        (doc) => {msg.channel.send(`Successfully removed the <@&${roleToDelete.id}> role from the dimension's role list!`)},
+        false,
+        true
+    )
+}
+
+async function repositionRole(msg, client, args, officerDimension, officerRole) {
+    var roleToReposition = await wizard.type.positionedDimensionRole(
+        msg,
+        client,
+        officerDimension,
+        {
+            title: "__**Reposition Dimension™ Role: Role**__",
+            description: `Type the __**name**__ of the role you want to reposition from the <@&${officerDimension}> dimension™. You cannot reposition the officer role, even though it's on the list.`
+        },
+        {
+            title: "__**Reposition Dimension™ Role: Role**__",
+            description: "Incorrect input! Type the __**name**__ of the role you want to reposition from your dimension™. You cannot reposition the officer role, even though it's on the list."
+        }
+    );
+    if(roleToReposition === false) return msg.channel.send("Ended dimension™ role repositioning.");
+
+    if(roleToReposition.id == officerRole) return msg.channel.send("You cannot reposition the officer role! Contact an admin if you need to. Ended wizard.")
+
+    var roleToPlaceUnder = await wizard.type.positionedDimensionRole(
+        msg,
+        client,
+        officerDimension,
+        {
+            title: "__**Reposition Dimension™ Role: Position**__",
+            description: `Type the __**name**__ of the role you want to place the <@&${roleToReposition.id}> role under. By that logic, you cannot place a role higher than the officer role.`
+        },
+        {
+            title: "__**Reposition Dimension™ Role: Position**__",
+            description: `Incorrect input! Type the __**name**__ of the role you want to place the <@&${roleToReposition.id}> role under. By that logic, you cannot place a role higher than the officer role.`
+        }
+    );
+    if(roleToPlaceUnder === false) return msg.channel.send("Ended dimension™ role repositioning.");
+    
+    var selectedRole = client.guilds.get(botSettings.guild).roles.get(roleToReposition.id);
+        
+    selectedRole.setPosition(roleToPlaceUnder.calculatedPosition-1)
+        .then(updated => msg.channel.send(`Successfully repositioned the <@&${roleToReposition.id}> role!`))
+        .catch(err => {
+            functions.embed.errors.catch(err, client)
+            return msg.channel.send("There was an error. Contact admin!");
+        });
+
+}
+
+async function modHelp(msg, client, args, officerDimension) {
+    const embed = new RichEmbed({
+        title: "__**Mod Commands Help**__",
+        description: "All of these commands __do not__ need arguments (text after them) **EXCEPT BAN & UNBAN**. They are all setup wizards. Type \'quit\' at anytime during the setup wizard to cancel the process (EXCEPT IN THE EMOJI/REACT PHASE. STILL WORKING ON THAT).",
+        fields: [
+            {name: ">mod ban", value: `Bans a member from <@&${officerDimension}>.`},
+            {name: ">mod unban", value: `Unbans a member from <@&${officerDimension}>.`},
+            {name: ">mod announce", value: `Takes you through a setup wizard for a <@&${officerDimension}> announcement.`},
+            {name: ">mod welcome", value: `Takes you through a setup wizard that helps setup a welcome message for <@&${officerDimension}>.`},
+            {name: ">mod create", value: `Setup wizard for a new role for <@&${officerDimension}>.`},
+            {name: ">mod remove", value: `Setup wizard to delete a role from <@&${officerDimension}>.`},
+            {name: ">mod reposition", value: `Setup wizard to reposition a role from <@&${officerDimension}>.`},
+            {name: ">mod help", value: `Lists all available commands (this)`},
+        ]
+    });
+
+    await msg.channel.send(embed);
+    await msg.channel.send("Done :3")
+}
 // // returns a bool, with true being user in right dimension and false the opposite
 // async function checkUserInRightDimension(client, user, officerDimension) {
 //     var member = client.guilds.get(botSettings.guild).members.get(user);

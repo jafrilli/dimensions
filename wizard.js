@@ -1,5 +1,6 @@
-const { RichEmbed } = require("discord.js");
+const { RichEmbed, Collection } = require("discord.js");
 const functions = require("./functions.js");
+const botSettings = require("./botSettings.json");
 
 /*
     ! initialEmbed & attemptedEmbed object format
@@ -12,9 +13,7 @@ const functions = require("./functions.js");
         }
     }
 */
-
-module.exports.default = async (msg, client, skippable, skipValue, initialEmbed, condition, attemptedEmbed) => {
-    var attempted = false;
+function checkEmbed(skippable, initialEmbed, attemptedEmbed) {
     if(!initialEmbed.footer) {
         initialEmbed.footer = {
             text: skippable ? "Type \'skip\' to skip this step, or \'quit\' to quit wizard..." : "Type \'quit\' to quit wizard...",
@@ -33,6 +32,17 @@ module.exports.default = async (msg, client, skippable, skipValue, initialEmbed,
             icon: null
         }
     }
+    return {
+        initial: initialEmbed,
+        attempted: attemptedEmbed
+    }
+}
+
+module.exports.default = async (msg, client, skippable, skipValue, initialEmbed, condition, attemptedEmbed) => {
+    var attempted = false;
+    var checkedEmbeds = checkEmbed(skippable, initialEmbed, attemptedEmbed);
+    initialEmbed = checkedEmbeds.initial;
+    attemptedEmbed = checkedEmbeds.attempted;
     do {
         await msg.channel.send(new RichEmbed({
             title: attempted ? attemptedEmbed.title : initialEmbed.title, 
@@ -137,6 +147,122 @@ module.exports.type = {
             name: reactedEmote.first().emoji.name
         };
     },
+    dimension: async (msg, client, initialEmbed, attemptedEmbed) => {
+        var skippable = false;
+        var checkedEmbeds = checkEmbed(skippable, initialEmbed, attemptedEmbed);
+        initialEmbed = checkedEmbeds.initial;
+        attemptedEmbed = checkedEmbeds.attempted;
+
+        var allDimensions = {};
+        const embedOne = new RichEmbed();
+        
+        await client.cache.dimensions.forEach(dimension => {
+            allDimensions[dimension.name] = dimension["_id"];
+            embedOne.addField(`**${dimension.name}**`, `<@&${dimension["_id"]}>`);
+        })
+            
+        var attempted = false;
+        do {
+            embedOne.setTitle(attempted ? attemptedEmbed.title : initialEmbed.title);
+            embedOne.setDescription(attempted ? attemptedEmbed.description : initialEmbed.description);
+            embedOne.setFooter(attempted ? attemptedEmbed.footer.text : initialEmbed.footer.text, attempted ? attemptedEmbed.footer.icon : initialEmbed.footer.icon);
+            await msg.channel.send(embedOne);
+            try {
+                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+            } catch(err) {
+                functions.embed.errors.catch(err, client);
+            }
+            if(response.first().content === "quit") { return false; }
+            
+            attempted = true;
+        } while (!Object.keys(allDimensions).includes(response.first().content))
+    
+        return allDimensions[response.first().content];
+    },
+    // returns role
+    dimensionRole: async (msg, client, dimensionID, initialEmbed, attemptedEmbed) => {
+        var skippable = false;
+        var checkedEmbeds = checkEmbed(skippable, initialEmbed, attemptedEmbed);
+        initialEmbed = checkedEmbeds.initial;
+        attemptedEmbed = checkedEmbeds.attempted;
+
+        const embedOne = new RichEmbed();
+        var allDimensionRoles = {};
+        
+        await client.cache.dimensions.get(dimensionID).roles.forEach(role => {
+            var roleName = client.guilds.get(botSettings.guild).roles.get(role).name
+            allDimensionRoles[roleName] = role;
+            embedOne.addField(`**${roleName}**`, `<@&${role}>`)
+        })
+            
+        var attempted = false;
+        do {
+            embedOne.setTitle(attempted ? attemptedEmbed.title : initialEmbed.title);
+            embedOne.setDescription(attempted ? attemptedEmbed.description : initialEmbed.description);
+            embedOne.setFooter(attempted ? attemptedEmbed.footer.text : initialEmbed.footer.text, attempted ? attemptedEmbed.footer.icon : initialEmbed.footer.icon);
+            await msg.channel.send(embedOne);
+            try {
+                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+            } catch(err) {
+                functions.embed.errors.catch(err, client);
+            }
+            // built-in quit detector
+            if(response.first().content === "quit") {return false;}
+            
+            attempted = true;
+        } while (!Object.keys(allDimensionRoles).includes(response.first().content) && response.first().content != "done")
+
+        
+        return response.first().content.toString().toLowerCase() == "done" ? response.first() : allDimensionRoles[response.first().content];
+    },
+    positionedDimensionRole: async (msg, client, dimensionID, initialEmbed, attemptedEmbed) => {
+        var skippable = false;
+        var checkedEmbeds = checkEmbed(skippable, initialEmbed, attemptedEmbed);
+        initialEmbed = checkedEmbeds.initial;
+        attemptedEmbed = checkedEmbeds.attempted;
+
+        const embedOne = new RichEmbed();
+        var allDimensionRoles = [];
+        var dimensionRoles = client.cache.dimensions.get(dimensionID).roles;
+        var dimensionRoleNames = [];
+        
+        await dimensionRoles.forEach(roleID => {
+            var role = client.guilds.get(botSettings.guild).roles.get(roleID);
+            allDimensionRoles.push({
+                id: roleID,
+                name: role.name,
+                position: role.position,
+                calculatedPosition: role.calculatedPosition
+            });
+            dimensionRoleNames.push(role.name);
+        })
+
+        allDimensionRoles.sort((a, b) => a.position - b.position);
+        allDimensionRoles.reverse();
+
+        allDimensionRoles.forEach((rlObj, ind) => {
+            embedOne.addField(`**${rlObj.name}**`, `<@&${rlObj.id}>`)
+        })
+            
+        var attempted = false;
+        do {
+            embedOne.setTitle(attempted ? attemptedEmbed.title : initialEmbed.title);
+            embedOne.setDescription(attempted ? attemptedEmbed.description : initialEmbed.description);
+            embedOne.setFooter(attempted ? attemptedEmbed.footer.text : initialEmbed.footer.text, attempted ? attemptedEmbed.footer.icon : initialEmbed.footer.icon);
+            await msg.channel.send(embedOne);
+            try {
+                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+            } catch(err) {
+                functions.embed.errors.catch(err, client);
+            }
+            // built-in quit detector
+            if(response.first().content === "quit") {return false;}
+            
+            attempted = true;
+        } while (!dimensionRoleNames.includes(response.first().content) && response.first().content != "done")
+
+        return response.first().content.toString().toLowerCase() == "done" ? response.first() : allDimensionRoles.filter(rl => rl.name == response.first().content)[0];
+    },
     mention: {
         channel: async (msg, client, skippable, skipValue, initialEmbed, attemptedEmbed) => {
             var res = await this.default(
@@ -187,14 +313,13 @@ module.exports.type = {
             return res;
         },
     },
-
     // special
     confirmation: async (msg, client, initialText, attemptedText, midConfirmationCB) => {
         var attempted = false;
         do {
             var confirmMessage = attempted ? attemptedText : initialText;
             await msg.channel.send(confirmMessage);
-            await midConfirmationCB(msg, client, attempted);
+            if(midConfirmationCB) await midConfirmationCB(msg, client, attempted);
             try {
                 var confirmation = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
             } catch(err) {
