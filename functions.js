@@ -83,22 +83,26 @@ module.exports.embed = {
 
         //TODO: Make this return an embed WITHOUT the use of 'msg'
         // returns an embed, unlike details and detailedDetails
-        portalDetails: async (dimensionID, msg, client) => {
+        portalDetails: async (dimensionID, client) => {
             const embed = new RichEmbed()
 
             // check if dimensionID is the correct format
             if(typeof dimensionID !== 'string') {
-                embed.setTitle("**Error retrieving data!**")
-                embed.setDescription("Error getting details in \'functions.dimension.details().\' DimensionID was not a string! ME SAD ;-;! Contact developer!")
-                await msg.channel.send(embed);
+                this.embed.errors.simple(
+                    "**Error retrieving data!**",
+                    "Error getting details in \'functions.dimension.details().\' DimensionID was not a string! ME SAD ;-;! Contact developer!",
+                    client
+                );
                 return;
             }
             
             var dimension = client.cache.dimensions.get(dimensionID);
             if(!dimension) {
-                embed.setTitle("**Dimension is not in the database!!**")
-                embed.setDescription("This may be an error, so you might want to contact the developer!")
-                await msg.channel.send(embed);
+                this.embed.errors.simple(
+                    "**Dimension is not in the database!!**",
+                    "This may be an error, so you might want to contact the developer!",
+                    client
+                );
                 return;
             }
             // if(dimension) not necessary but it looks neater so rip
@@ -329,12 +333,19 @@ module.exports.embed = {
             embed.addField("Error Description", err.message.substring(0,200));
             
             client.guilds.get(botSettings.guild).channels.get(botSettings.error).send(embed);
+        },
+        simple: async (title, description, client) => {
+            var embed = new RichEmbed({
+                title: title,
+                description: description
+            });
+            client.guilds.get(botSettings.guild).channels.get(botSettings.error).send(embed);
         }
     }
 }
 
 module.exports.processes = {
-    refreshPortals: async (msg, client) => {
+    refreshPortals: async (client) => {
 
         const portal = client.guilds.get(botSettings.guild).channels.get(botSettings.portal);
 
@@ -345,8 +356,26 @@ module.exports.processes = {
         const dimensions = await client.cache.dimensions.array()
         const rrs = []
         
+        // stuck between two dimensions
+        var stuckReaction = {};
+        const sentMsg = await portal.send(new RichEmbed({
+            title: "Stuck Between Dimensions?",
+            description: "Are you in two dimensions simultaneously? " +
+            "That's a super rare scenario, but we've seen it happen. No worries though! " +
+            "React to this message to fix the issue! \n**DISCLAIMER:** You may lose some " +
+            "of your roles for a particular dimension if you do this. If that happens, notify " +
+            "that dimension's officer to give you back your roles.",
+            color: 16777214
+        }));
+        stuckReaction["_id"] = sentMsg.id
+        stuckReaction.type = "stuck"
+        stuckReaction.reactionRoles = {};
+        stuckReaction.reactionRoles["stuck"] = "stuck";
+        rrs.push(stuckReaction)
+        sentMsg.react('🛠');
+
         for (var i = 0; i < dimensions.length; i++) {
-            const dimensionDetails = await this.embed.dimension.portalDetails(dimensions[i]["_id"], msg, client);
+            const dimensionDetails = await this.embed.dimension.portalDetails(dimensions[i]["_id"], client);
             var reactionRole = {};
             
             const sentEmbed = await portal.send(dimensionDetails);
@@ -358,12 +387,12 @@ module.exports.processes = {
             // console.log(reactionRole)
             sentEmbed.react(dimensionDetails.emoji.id);
         }
-        // console.log(rrs)
+        // stuck between two dimensions
         
         await this.db.delete.many(
             client,
             client.models.rrmessage,
-            {type: "portal"},
+            {"$and": [{type: "portal"}, {type: "stuck"}]},
             (err) => {console.log("There was an error trying to delete portal reaction role data in refreshPortals")},
             (docs) => {}
         )

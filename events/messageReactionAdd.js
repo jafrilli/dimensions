@@ -14,6 +14,32 @@ module.exports.run = async (client, reaction, user) => {
     if(!rrmsg) return;
 
     try {
+        // ! Recently added
+        if(rrmsg.type == "stuck") {
+            var dimensions = client.cache.dimensions.keyArray();
+            var dimensionsUserIsIn = [];
+            var dmCha = await user.createDM();
+            var member = client.guilds.get(botSettings.guild).members.get(user.id);
+
+            member.roles.forEach((role) => {
+                if(dimensions.includes(role.id)) {
+                    dimensionsUserIsIn.push(role.id);
+                } 
+            });
+
+            if(dimensionsUserIsIn.length <= 1) {
+                dmCha.send("You're not in more than one dimensions smh!");
+            } else {
+                var dimensionsToRemove = dimensionsUserIsIn.slice(0, dimensionsUserIsIn.length-1);
+                var member = client.guilds.get(botSettings.guild).members.get(user.id);
+                console.log(dimensionsToRemove);
+                await member.removeRoles(dimensionsToRemove);
+                dmCha.send("You actually were in more than one dimensions! Fixed the issue!");
+            }
+            reaction.remove(user);
+            return;
+        }
+
         // check if message has that emote
         const keys = Object.keys(rrmsg.reactionRoles);
         if(!keys.includes(reaction.emoji.id)) {console.log("DOESNT HAVE IT..."); return;};

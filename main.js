@@ -1,8 +1,25 @@
 const { Client, Collection } = require("discord.js");
 const botSettings = require("./botSettings.json");
 const fs = require("fs");
+const functions = require("./functions.js");
 const mongoose = require("mongoose");
 const client = new Client();
+const shell = require('shelljs');
+var schedule = require('node-schedule');
+ 
+// daily backup
+const fileLocation = '~';
+const rule = new schedule.RecurrenceRule();
+rule.hour = 22;
+rule.minute = 0;
+
+var j = schedule.scheduleJob(rule, () => {
+    const date = new Date();
+    const fileName = date.getMonth()+1 + "" + date.getDate() + "" + date.getFullYear();
+    const command = "mongodump --db=dimensionsDB --archive=" + fileName + " --gzip";
+    shell.cd(fileLocation);
+    shell.exec(command);
+});
 
 client.commands = new Collection();
 client.indicators = {
@@ -99,6 +116,8 @@ client.on("ready", async () => {
     console.log(`Set activity to \"${botSettings.activity.type} ${botSettings.activity.description}\"`)
 
     console.log("=================== READY END ===================")
+    // refresh portals
+    functions.processes.refreshPortals(client);
 })
 
 fs.readdir("./commands/", (err, files) => {

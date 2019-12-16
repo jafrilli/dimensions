@@ -1,5 +1,6 @@
 const functions = require("../functions.js");
 
+// added refresh portals to all
 module.exports = {
     dimensionDelete: async (client, dimensionID, failureCB, successCB) => {
         await functions.db.delete.one(
@@ -8,7 +9,8 @@ module.exports = {
             {_id: dimensionID}, 
             (err) => {failureCB(err)},
             (doc) => {successCB(doc)}
-        )
+        );
+        functions.processes.refreshPortals(client);
     },
     dimensionCreate: async (client, newDimensionObject, failureCB, successCB) => {
         await functions.db.add(
@@ -18,6 +20,7 @@ module.exports = {
             (err) => {failureCB(err)},
             (doc) => {successCB(doc)}
         );
+        functions.processes.refreshPortals(client);
     },
     dimensionUpdate: async (client, dimensionID, field, newValue, failureCB, successCB, addToSet, removeFromSet) => {
         if(addToSet) {
@@ -63,5 +66,6 @@ module.exports = {
                 async (doc) => {await successCB(doc)}
             );
         }
+        functions.processes.refreshPortals(client);
     },
 };

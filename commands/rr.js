@@ -42,7 +42,7 @@ module.exports.help = {
 }
 
 async function rrLink(msg, client, args) {
-    await functions.processes.refreshPortals(msg, client)
+    await functions.processes.refreshPortals(client)
 }
 
 function graphicTest(msg, client, args) {

@@ -493,8 +493,11 @@ async function dimensionDelete(msg, client, args) {
     await msg.channel.send("Took " + time.toString() + " milliseconds to process!");
     
     // 6. delete the role from the guild
-    await msg.guild.roles.get(selectedDimensionID).delete();
-
+    try {
+        await msg.guild.roles.get(selectedDimensionID).delete();
+    } catch (err) {
+        functions.embed.errors.catch(err, client);
+    }
 }
 
 // >FIND< {} (D O N E)
