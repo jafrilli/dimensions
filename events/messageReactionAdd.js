@@ -44,7 +44,6 @@ module.exports.run = async (client, reaction, user) => {
         const keys = Object.keys(rrmsg.reactionRoles);
         if(!keys.includes(reaction.emoji.id)) {console.log("DOESNT HAVE IT..."); return;};
         
-        // check if the cooldown is finished (10 seconds)
         if(new Date() - client.cache.members.get(user.id).lastTeleport > teleportingTime) {
             
             // checks if user is banned
