@@ -388,15 +388,14 @@ module.exports.processes = {
             sentEmbed.react(dimensionDetails.emoji.id);
         }
         // stuck between two dimensions
-        
+
         await this.db.delete.many(
             client,
             client.models.rrmessage,
-            {"$and": [{type: "portal"}, {type: "stuck"}]},
+            {type: { "$in": ["portal", "stuck"]}},
             (err) => {console.log("There was an error trying to delete portal reaction role data in refreshPortals")},
             (docs) => {}
         )
-        
 
         await this.db.add(
             client,
