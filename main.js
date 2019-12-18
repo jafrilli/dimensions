@@ -30,6 +30,7 @@ client.indicators = {
 // ITS SUPER IMPORTANT THAT THESE NAMES RESEMBLE THE COLLECTION NAMES (you use schema.collection.name) in recache
 client.cache = {
     dimensions: new Collection(),
+    // member cache is for dimension teleport cooldown
     members: new Collection(),
     rrmessages: new Collection()
 }
@@ -68,22 +69,23 @@ client.models.dimension.find({}, async (err, docs) => {
         console.log("Initially cached the \'dimensions\' collection!")
     }
 })
-client.models.member.find({}, async (err, docs) => {
-    if(err) {
-        console.log("Could not initially (before client ready) cache members data.");
-        client.couldNotCache.members = true;
-        return;
-    }
-    if(docs) {
-        await docs.forEach(doc => {
-            // for the teleport cooldown feature
-            doc.lastTeleport = new Date();
-            client.cache.members.set(doc["_id"], doc);
+// no reason to cache member data
+// client.models.member.find({}, async (err, docs) => {
+//     if(err) {
+//         console.log("Could not initially (before client ready) cache members data.");
+//         client.couldNotCache.members = true;
+//         return;
+//     }
+//     if(docs) {
+//         await docs.forEach(doc => {
+//             // for the teleport cooldown feature
+//             doc.lastTeleport = new Date();
+//             client.cache.members.set(doc["_id"], doc);
             
-        })
-        console.log("Initially cached the \'members\' collection!")
-    }
-})
+//         })
+//         console.log("Initially cached the \'members\' collection!")
+//     }
+// })
 client.models.rrmessage.find({}, async (err, docs) => {
     if(err) {
         console.log("Could not initially (before client ready) cache rrmessage data.");
