@@ -486,7 +486,9 @@ module.exports.processes = {
             this.embed.errors.catch(e, client);
         }
         try{
-            await member.removeRole(previousDimensionID[0]);
+            if(previousDimensionID[0]) {
+                await member.removeRole(previousDimensionID[0]);
+            }
         } catch(e) {
             this.embed.errors.catch(e, client);
         }
