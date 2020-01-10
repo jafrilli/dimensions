@@ -2,7 +2,7 @@ const botSettings = require("../botSettings.json");
 const functions = require("../functions.js");
 
 module.exports.run = async (client, reaction, user) => {
-    
+    console.log(reaction.emoji.name);
     if (user.id === client.user.id) return;
     if (user.bot) return;
     if (client.indicators.teleporting.includes(user.id)) return;
@@ -26,7 +26,9 @@ module.exports.run = async (client, reaction, user) => {
 
     // is the emote related to the rrmessage? (nothing random)
     const keys = Object.keys(rrmsg.reactionRoles);
-    if(!keys.includes(reaction.emoji.id)) return;
+    //? * The 'reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name' throughout this file is 
+    //? * to make sure it works for both standard and custom emojis
+    if(!keys.includes(reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name)) return;
          
 
     if(rrmsg.type == "portal") {
@@ -41,9 +43,17 @@ module.exports.run = async (client, reaction, user) => {
         }
     }
     
-    
-    // if(reaction.message.channel.id === botSettings.portal && reaction.message.embeds) {
-    //}
+    if(rrmsg.type == "normal") {
+        try {
+            await normalReaction(client, reaction, user, rrmsg);
+            return;
+        } catch (err) {
+            console.log("there was an error trying to give a member a role based on what emote they reacted in messageReactionAdd");
+            functions.embed.errors.catch(err, client);
+            reaction.remove(user);
+            return;
+        }
+    }
 }
 
 module.exports.help = {
@@ -86,17 +96,17 @@ async function portalReaction(client, reaction, user, rrmsg, teleportingTime) {
     if(new Date() - client.cache.members.get(user.id).lastTeleport > teleportingTime) {
         
         // 3. checks if user is banned
-        if(client.cache.dimensions.get(rrmsg.reactionRoles[reaction.emoji.id]).bans.includes(user.id)) {
-            var bannedEmbed = functions.embed.dimension.bannedEmbed(rrmsg.reactionRoles[reaction.emoji.id], client);
+        if(client.cache.dimensions.get(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]).bans.includes(user.id)) {
+            var bannedEmbed = functions.embed.dimension.bannedEmbed(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name], client);
             var dmCh = await user.createDM();
             reaction.remove(user);
             return dmCh.send(bannedEmbed);
         }
 
         // 4. check if user needs password
-        var authorized = await functions.processes.requestPassword(client,user,rrmsg.reactionRoles[reaction.emoji.id]);
+        var authorized = await functions.processes.requestPassword(client,user,rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]);
         if(authorized) {
-            await client.guilds.get(botSettings.guild).members.get(user.id).addRole(rrmsg.reactionRoles[reaction.emoji.id]);
+            await client.guilds.get(botSettings.guild).members.get(user.id).addRole(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]);
         }
 
     } else {
@@ -113,3 +123,6 @@ async function portalReaction(client, reaction, user, rrmsg, teleportingTime) {
     reaction.remove(user);
 }
 
+async function normalReaction(client, reaction, user, rrmsg) {
+    await client.guilds.get(botSettings.guild).members.get(user.id).addRole(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]);
+}
