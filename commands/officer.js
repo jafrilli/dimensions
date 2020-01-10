@@ -1,7 +1,7 @@
 const botSettings = require("../botSettings.json");
 const df = require("../classes/dimensionFuncs.js");
 const functions = require("../functions.js");
-const { RichEmbed } = require("discord.js");
+const { MessageEmbed } = require("discord.js");
 const wizard = require("../wizard.js");
 
 
@@ -418,7 +418,7 @@ async function repositionRole(msg, client, args, officerDimension, officerRole) 
 }
 
 async function modHelp(msg, client, args, officerDimension) {
-    const embed = new RichEmbed({
+    const embed = new MessageEmbed({
         title: "__**Mod Commands Help**__",
         description: "All of these commands __do not__ need arguments (text after them) **EXCEPT BAN & UNBAN**. They are all setup wizards. Type \'quit\' at anytime during the setup wizard to cancel the process (EXCEPT IN THE EMOJI/REACT PHASE. STILL WORKING ON THAT).",
         fields: [

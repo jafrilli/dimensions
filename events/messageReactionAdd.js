@@ -2,7 +2,7 @@ const botSettings = require("../botSettings.json");
 const functions = require("../functions.js");
 
 module.exports.run = async (client, reaction, user) => {
-    console.log(reaction.emoji.name);
+
     if (user.id === client.user.id) return;
     if (user.bot) return;
     if (client.indicators.teleporting.includes(user.id)) return;

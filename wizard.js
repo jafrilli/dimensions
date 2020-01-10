@@ -1,4 +1,4 @@
-const { RichEmbed, Collection } = require("discord.js");
+const { MessageEmbed, Collection } = require("discord.js");
 const functions = require("./functions.js");
 const botSettings = require("./botSettings.json");
 
@@ -44,7 +44,7 @@ module.exports.default = async (msg, client, skippable, skipValue, initialEmbed,
     initialEmbed = checkedEmbeds.initial;
     attemptedEmbed = checkedEmbeds.attempted;
     do {
-        await msg.channel.send(new RichEmbed({
+        await msg.channel.send(new MessageEmbed({
             title: attempted ? attemptedEmbed.title : initialEmbed.title, 
             description: attempted ? attemptedEmbed.description : initialEmbed.description, 
             footer: {
@@ -126,7 +126,7 @@ module.exports.type = {
     reaction: async (msg, client, initialEmbed, attemptedEmbed) => {
         var attempted = false
         do {
-            var emojiRequest = await msg.channel.send(new RichEmbed({
+            var emojiRequest = await msg.channel.send(new MessageEmbed({
                 title: attempted ? attemptedEmbed.title : initialEmbed.title, 
                 description: attempted ? attemptedEmbed.description : initialEmbed.description, 
                 footer: {
@@ -154,7 +154,7 @@ module.exports.type = {
         attemptedEmbed = checkedEmbeds.attempted;
 
         var allDimensions = {};
-        const embedOne = new RichEmbed();
+        const embedOne = new MessageEmbed();
         
         await client.cache.dimensions.forEach(dimension => {
             allDimensions[dimension.name] = dimension["_id"];
@@ -186,7 +186,7 @@ module.exports.type = {
         initialEmbed = checkedEmbeds.initial;
         attemptedEmbed = checkedEmbeds.attempted;
 
-        const embedOne = new RichEmbed();
+        const embedOne = new MessageEmbed();
         var allDimensionRoles = {};
         
         await client.cache.dimensions.get(dimensionID).roles.forEach(role => {
@@ -221,7 +221,7 @@ module.exports.type = {
         initialEmbed = checkedEmbeds.initial;
         attemptedEmbed = checkedEmbeds.attempted;
 
-        const embedOne = new RichEmbed();
+        const embedOne = new MessageEmbed();
         var allDimensionRoles = [];
         var dimensionRoles = client.cache.dimensions.get(dimensionID).roles;
         var dimensionRoleNames = [];

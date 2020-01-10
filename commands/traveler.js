@@ -1,5 +1,5 @@
 var Member = require("../classes/member.js");
-var { RichEmbed } = require("discord.js");
+var { MessageEmbed } = require("discord.js");
 
 module.exports.run = async (msg, client, args) => {
     
@@ -82,7 +82,7 @@ async function viewStats(msg, client, args) {
     }
     await member.init();
     // create the embed
-    var embed = new RichEmbed({
+    var embed = new MessageEmbed({
         title: "**User Stats**",
         description: "Here are your stats (this should be replaced by a graphic soon)",
         fields: [

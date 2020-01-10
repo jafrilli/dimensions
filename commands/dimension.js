@@ -1,4 +1,4 @@
-const { RichEmbed } = require("discord.js");
+const { MessageEmbed } = require("discord.js");
 const functions = require("../functions.js");
 const df = require("../classes/dimensionFuncs.js");
 const botSettings = require("../botSettings.json");
@@ -80,7 +80,7 @@ async function addRoles(msg, client, args) {
     if(wizardResponse === false) {return msg.channel.send(quitMessage)}
 
     
-    var successEmbed = new RichEmbed({
+    var successEmbed = new MessageEmbed({
         title: "__**Successfully Added Dimension™ Roles!**__",
         description: `The roles you have specified have been successfully added to the <@&${wizardResponse.dimensionID}>. Here are the roles you added: `
     })
@@ -182,7 +182,7 @@ async function deleteRoles(msg, client, args) {
     if(!wizardResponse) {return msg.channel.send(quitMessage);}
     if(wizardResponse === false) {return msg.channel.send(quitMessage)}
 
-    var successEmbed = new RichEmbed({
+    var successEmbed = new MessageEmbed({
         title: "__**Successfully Deleted Dimension™ Roles!**__",
         description: `The roles you have specified have been successfully deleted from the <@&${wizardResponse.dimensionID}> dimension list. Here are the roles you deleted: `
     })
@@ -303,7 +303,7 @@ async function dimensionCreate(msg, client, args) {
     newDimension.password = null;
 
     // Rich embed (finalizing)
-    const dimensionEmbed = new RichEmbed({
+    const dimensionEmbed = new MessageEmbed({
         title: "__**New Dimension™ Details:**__",
         description: "Successfully created a new dimension™ role and database entry.",
         thumbnail: {url: newDimension.emoji.url},
@@ -395,7 +395,7 @@ async function dimensionUpdate(msg, client, args) {
         if(whatToUpdateAttempted) {
             whatToUpdateDescription = "Your answer has to be one of the following settings! Try again, or type \'quit\' to stop this process:"
         }
-        await msg.channel.send(new RichEmbed({
+        await msg.channel.send(new MessageEmbed({
             description: whatToUpdateDescription,
             fields: [
                 // MAKE SURE TO UPDATE updateOptions[] ABOVE IF U UPDATE THIS ARRAY
@@ -503,7 +503,7 @@ async function dimensionDelete(msg, client, args) {
 // >FIND< {} (D O N E)
 async function dimensionList(msg, client, args) {
     
-    const embed = new RichEmbed();
+    const embed = new MessageEmbed();
     embed.setTitle("__**Dimension™ List**__");
     embed.setDescription("Here's a list of all the existing dimensions. Type \'>dimension create\' to create a dimension, and type \'>dimension delete\' to delete one.")
 
@@ -542,7 +542,7 @@ async function dimensionDetails(msg, client, args) {
 // temporary, until we make a bigger, global (not just >dimension) help wizard ig
 // NO DB FUNCTIONS
 async function dimensionHelp(msg, client, args) {
-    const embed = new RichEmbed({
+    const embed = new MessageEmbed({
         title: "__**Dimension™ Help**__",
         description: "All of these commands __do not__ need arguments (text after them). They are all setup wizards. Type \'quit\' at anytime during the setup wizard to cancel the process (EXCEPT IN THE EMOJI/REACT PHASE. STILL WORKING ON THAT).",
         fields: [
@@ -820,7 +820,7 @@ var updateFunctions = {
         // do {
         //     var emojiSetupMessage = `React to this message with a new \'emote\' **FROM THIS SERVER** you want to use for the updated <@&${dimensionID}> dimension™ emote:`;
         //     if(emojiAttempted) {emojiSetupMessage = "You need to use a custom emote from this server, and it cannot be a default emote, like :joy: Try Again."}
-        //     var emojiRequest = await msg.channel.send(new RichEmbed({title: `__**Update <@&${dimensionID}> Dimension™: Emoji**__`, description: emojiSetupMessage, footer: {text: "You can't type \'quit\' in this part of the setup. Choose something random if you're unsure. You can update it later..."}}))
+        //     var emojiRequest = await msg.channel.send(new MessageEmbed({title: `__**Update <@&${dimensionID}> Dimension™: Emoji**__`, description: emojiSetupMessage, footer: {text: "You can't type \'quit\' in this part of the setup. Choose something random if you're unsure. You can update it later..."}}))
         //     try{
         //         var dimensionEmoji = await emojiRequest.awaitReactions(reaction => reaction.users.first().id === msg.author.id, {maxEmojis: 1});
         //     }catch(err){

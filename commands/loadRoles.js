@@ -1,4 +1,4 @@
-const { RichEmbed } = require("discord.js");
+const { MessageEmbed } = require("discord.js");
 const Role = require("../models/role.js");
 const functions = require("../functions.js");
 

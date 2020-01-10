@@ -1,4 +1,4 @@
-const { RichEmbed, Collection } = require("discord.js");
+const { MessageEmbed, Collection } = require("discord.js");
 const isURL = require("is-url");
 const colorChecker = require("css-color-checker");
 const converter = require("hex2dec");
@@ -22,10 +22,10 @@ async function isMediaURL(string) {
 
 module.exports.embed = {
     dimension: {
-        // returns detailed RichEmbed of entered dimension™
+        // returns detailed MessageEmbed of entered dimension™
         // FIND BY ID (D O N E)
         details: async (dimensionID, msg, client) => {
-            const embed = new RichEmbed()
+            const embed = new MessageEmbed()
 
             // check if dimensionID is the correct format
             if(typeof dimensionID !== 'string') {
@@ -84,7 +84,7 @@ module.exports.embed = {
         //TODO: Make this return an embed WITHOUT the use of 'msg'
         // returns an embed, unlike details and detailedDetails
         portalDetails: async (dimensionID, client) => {
-            const embed = new RichEmbed()
+            const embed = new MessageEmbed()
 
             // check if dimensionID is the correct format
             if(typeof dimensionID !== 'string') {
@@ -138,7 +138,7 @@ module.exports.embed = {
         // FIND BY ID (D O N E)
         detailedDetails: async (dimensionID, msg, client) => {
             
-            const embed = new RichEmbed();
+            const embed = new MessageEmbed();
 
             // check if dimensionID is the correct format
             if(typeof dimensionID !== 'string') {
@@ -188,7 +188,7 @@ module.exports.embed = {
             }
         */
         announcementEmbed: async (dimensionID, msg, client, announcementObject) => {
-            const embed = new RichEmbed();
+            const embed = new MessageEmbed();
 
             // check if dimensionID is the correct format
             if(typeof dimensionID !== 'string') {
@@ -225,7 +225,7 @@ module.exports.embed = {
         // an embed for password requests
         // UNLIKE THE OTHERS, PASSWORD REQUEST >>>>RETURNS AN EMBED<<<<, DOESNT SEND IT FOR YOU
         passwordRequest: async (dimensionID, client) => {
-            var embed = new RichEmbed();
+            var embed = new MessageEmbed();
             
             // check if dimensionID is the correct format
             if(typeof dimensionID !== 'string') {
@@ -258,7 +258,7 @@ module.exports.embed = {
         },
 
         bannedEmbed: (dimensionID, client) => {
-            var embed = new RichEmbed();
+            var embed = new MessageEmbed();
             
             // check if dimensionID is the correct format
             if(typeof dimensionID !== 'string') {
@@ -293,7 +293,7 @@ module.exports.embed = {
         welcomeEmbed: (dimensionID, client, member) => {
             var dimension = client.cache.dimensions.get(dimensionID);
             
-            var embed = new RichEmbed();
+            var embed = new MessageEmbed();
             
             // check if dimensionID is the correct format
             if(typeof dimensionID !== 'string') {
@@ -327,7 +327,7 @@ module.exports.embed = {
     },
     errors: {
         catch: async (err, client) => {
-            var embed = new RichEmbed();
+            var embed = new MessageEmbed();
             embed.setTitle("Try/Catch Error @ " + err.stack.substring(0,200));
             embed.addField("Error Type", err.name.substring(0,200));
             embed.addField("Error Description", err.message.substring(0,200));
@@ -335,7 +335,7 @@ module.exports.embed = {
             client.guilds.get(botSettings.guild).channels.get(botSettings.error).send(embed);
         },
         simple: async (title, description, client) => {
-            var embed = new RichEmbed({
+            var embed = new MessageEmbed({
                 title: title,
                 description: description
             });
@@ -350,7 +350,7 @@ module.exports.processes = {
         const portal = client.guilds.get(botSettings.guild).channels.get(botSettings.portal);
 
         // 1. delete all the dimension msgs
-        const msgsToDelete = await portal.fetchMessages()
+        const msgsToDelete = await portal.messages.fetch();
         await portal.bulkDelete(msgsToDelete.filter(message => message.author.id == client.user.id));
 
         const dimensions = await client.cache.dimensions.array()
@@ -358,7 +358,7 @@ module.exports.processes = {
         
         // stuck between two dimensions
         var stuckReaction = {};
-        const sentMsg = await portal.send(new RichEmbed({
+        const sentMsg = await portal.send(new MessageEmbed({
             title: "Stuck Between Dimensions?",
             description: "Are you in two dimensions simultaneously? " +
             "That's a super rare scenario, but we've seen it happen. No worries though! " +

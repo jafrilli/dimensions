@@ -12,7 +12,7 @@
   "dependencies": {
     "canvas": "^2.6.0",
     "css-color-checker": "^1.6.1",
-    "discord.js": "^11.5.1",
+    "discord.js": "github:discordjs/discord.js",
     "hex2dec": "^1.1.2",
     "is-url": "^1.2.4",
     "mongoose": "^5.7.5",

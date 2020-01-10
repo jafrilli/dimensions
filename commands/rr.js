@@ -1,4 +1,4 @@
-const { RichEmbed } = require("discord.js");
+const { MessageEmbed } = require("discord.js");
 const functions = require("../functions.js");
 const {graphics} = require("../graphics.js");
 const wizard = require("../wizard.js");
@@ -108,7 +108,7 @@ async function rrCreate(msg, client, args) {
         if(response == 'no_role') msg.channel.send("You're missing a role! Mention a role. Try again!");
     } while (response != 'done');
 
-    var rrEmbed = new RichEmbed();
+    var rrEmbed = new MessageEmbed();
     rrEmbed.setTitle(title ? title : "");
     rrEmbed.setDescription(description ? description : "");
     rrEmbed.setColor(color);
