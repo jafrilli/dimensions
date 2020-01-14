@@ -285,13 +285,15 @@ async function dimensionCreate(msg, client, args) {
 
     // Create new dimension™ role:
     try{
-        var newRole = await msg.guild.createRole({
-            name: `『${newDimension.name}』`,
-            color: newDimension.color,
-            mentionable: false
+        var newRole = await msg.guild.roles.create({
+            data: {
+                name: `『${newDimension.name}』`,
+                color: newDimension.color,
+                mentionable: false
+            }
         })
     } catch (err) {
-        msg.channel.send("There was a problem making the role (createRole()) in the \'>dimension create\' process. Please contact the developer.").catch(
+        msg.channel.send("There was a problem making the role (roles.create()) in the \'>dimension create\' process. Please contact the developer.").catch(
             console.log("ERROR TRYING TO SEND THE ERROR MESSAGE WHILE creating new role for new dimension: \n" + err)
         );
         return;
@@ -344,8 +346,7 @@ async function dimensionCreate(msg, client, args) {
     );
     
     //? RECENTLY ADDED: Automatically makes a new category and starter channel
-    msg.guild.createChannel(newDimension.name, {
-        type: 'category',
+    msg.guild.channels.create(newDimension.name, 'category', {
         permissionOverwrites: [
             {
                 id: newDimension["_id"],

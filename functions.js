@@ -412,7 +412,7 @@ module.exports.processes = {
         client.indicators.teleporting.push(oldMember.user.id);
         // give teleporting role
         const member = client.guilds.get(botSettings.guild).members.get(oldMember.user.id);
-        await member.addRole(botSettings.teleporting.role);
+        await member.roles.add(botSettings.teleporting.role);
         
         var dimensionsIDs = client.cache.dimensions.keyArray();
         // should i use newMember instead? EXCLUDE @EVERYONE
@@ -476,17 +476,28 @@ module.exports.processes = {
             this.embed.errors.catch(error, client);
         }
         
+        
+        // ! fixed the v12 bug
+        // console.log('previous roles:');
+        // console.log(prs);
+        // console.log('previous dimension role:')
+        // console.log(previousDimensionID);
 
+        // i want to remove the previous roles and previous dimension role
+        // and add the rolesToAdd
 
-        // edit the roles
         try{
-            await member.removeRoles(prs);
+            for(var i = 0; i < prs.length; i++) {
+                var role = prs[i];
+                await member.roles.remove(prs);
+            }
         } catch(e) {
             this.embed.errors.catch(e, client);
         }
+
         try{
             if(previousDimensionID[0]) {
-                await member.removeRole(previousDimensionID[0]);
+                await member.roles.remove(previousDimensionID);
             }
         } catch(e) {
             this.embed.errors.catch(e, client);
@@ -495,17 +506,22 @@ module.exports.processes = {
 
         var newPossibleDimensionRoles = client.cache.dimensions.get(dimensionID).roles;
         var rolesToAdd = memberData.roles.filter((r) => newPossibleDimensionRoles.includes(r));
-        
+
+        // console.log('roles to add:')
+        // console.log(rolesToAdd)
+
         try{
-            await member.addRoles(rolesToAdd);
+            for(var i = 0; i < rolesToAdd.length; i++) {
+                var role = rolesToAdd[i];
+                await member.roles.add(role);
+            }
         } catch(e) {
             this.embed.errors.catch(e, client);
         }
         
-
-        // remove them from the list
+        // remove 'teleporting' role and user from the 'teleporting' list
         try { 
-            await member.removeRole(botSettings.teleporting.role);
+            await member.roles.remove(botSettings.teleporting.role);
             client.indicators.teleporting = client.indicators.teleporting.filter(usr => usr != oldMember.user.id);
         } catch (error) {
             console.log(error);

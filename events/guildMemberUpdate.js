@@ -25,6 +25,7 @@ module.exports.run = async (client, oldMember, newMember) => {
     for(var i = 0; i < addedRoles.length; i++) {
         if(client.cache.dimensions.keyArray().includes(addedRoles[i])) {
             doesInclude = true;
+            console.log('runs');
             // resets the cooldown timer, and teleports the user
             await functions.processes.teleport(client, addedRoles[i], oldMember, newMember);
             client.cache.members.get(oldMember.user.id).lastTeleport = new Date();

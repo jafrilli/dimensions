@@ -7,7 +7,7 @@ module.exports.run = async (client, reaction, user) => {
     if (user.bot) return;
     if (client.indicators.teleporting.includes(user.id)) return;
 
-    var teleportingTime = 20000;
+    var teleportingTime = 0;
     
     const rrmsg = client.cache.rrmessages.get(reaction.message.id);
     // is message a rrmessage?
@@ -19,7 +19,7 @@ module.exports.run = async (client, reaction, user) => {
             return;
         } catch (err) {
             functions.embed.errors.catch(err, client);
-            reaction.remove(user);
+            reaction.users.remove(user);
             return;
         }
     }
@@ -38,7 +38,7 @@ module.exports.run = async (client, reaction, user) => {
         } catch (err) {
             console.log("there was an error trying to give a member a role based on what emote they reacted in messageReactionAdd");
             functions.embed.errors.catch(err, client);
-            reaction.remove(user);
+            reaction.users.remove(user);
             return;
         }
     }
@@ -50,7 +50,7 @@ module.exports.run = async (client, reaction, user) => {
         } catch (err) {
             console.log("there was an error trying to give a member a role based on what emote they reacted in messageReactionAdd");
             functions.embed.errors.catch(err, client);
-            reaction.remove(user);
+            reaction.users.remove(user);
             return;
         }
     }
@@ -81,7 +81,7 @@ async function stuckReaction(client, reaction, user, rrmsg) {
         await member.removeRoles(dimensionsToRemove);
         dmCha.send("You actually were in more than one dimensions! Fixed the issue!");
     }
-    reaction.remove(user);
+    reaction.users.remove(user);
 }
 
 // ? like regular rr reaction, but has ban, cooldown, and password checks (very different)
@@ -99,14 +99,14 @@ async function portalReaction(client, reaction, user, rrmsg, teleportingTime) {
         if(client.cache.dimensions.get(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]).bans.includes(user.id)) {
             var bannedEmbed = functions.embed.dimension.bannedEmbed(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name], client);
             var dmCh = await user.createDM();
-            reaction.remove(user);
+            reaction.users.remove(user);
             return dmCh.send(bannedEmbed);
         }
 
         // 4. check if user needs password
         var authorized = await functions.processes.requestPassword(client,user,rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]);
         if(authorized) {
-            await client.guilds.get(botSettings.guild).members.get(user.id).addRole(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]);
+            await client.guilds.get(botSettings.guild).members.get(user.id).roles.add(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]);
         }
 
     } else {
@@ -120,9 +120,9 @@ async function portalReaction(client, reaction, user, rrmsg, teleportingTime) {
     }
 
     // remove the reaction
-    reaction.remove(user);
+    reaction.users.remove(user);
 }
 
 async function normalReaction(client, reaction, user, rrmsg) {
-    await client.guilds.get(botSettings.guild).members.get(user.id).addRole(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]);
+    await client.guilds.get(botSettings.guild).members.get(user.id).roles.add(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]);
 }

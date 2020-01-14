@@ -3,7 +3,7 @@ const botSettings = require("./botSettings.json");
 const fs = require("fs");
 const functions = require("./functions.js");
 const mongoose = require("mongoose");
-const client = new Client({partials:['MESSAGE']});
+const client = new Client({partials:['REACTION', 'MESSAGE']});
 const shell = require('shelljs');
 var schedule = require('node-schedule');
  

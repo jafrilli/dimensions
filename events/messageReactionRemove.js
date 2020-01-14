@@ -26,7 +26,7 @@ module.exports.run = async (client, reaction, user) => {
         } catch (err) {
             console.log("there was an error trying to remove a role based on what emote they reacted in messageReactionAdd");
             functions.embed.errors.catch(err, client);
-            reaction.remove(user);
+            reaction.users.remove(user);
             return;
         }
     }
@@ -37,5 +37,5 @@ module.exports.help = {
 }
 
 async function normalReaction(client, reaction, user, rrmsg) {
-    await client.guilds.get(botSettings.guild).members.get(user.id).removeRole(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]);
+    await client.guilds.get(botSettings.guild).members.get(user.id).roles.remove(rrmsg.reactionRoles[reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name]);
 }

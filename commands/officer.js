@@ -317,12 +317,14 @@ async function createDimensionRole(msg, client, args, officerDimension) {
     if(rolePositionObj === false) return msg.channel.send("Ended dimension™ role creation.");
 
     try{
-        var newRole = await msg.guild.createRole({
-            name: roleName,
-            color: roleColor,
-            mentionable: false,
-            position: rolePositionObj.calculatedPosition,
-            hoist: true,
+        var newRole = await msg.guild.roles.create({
+            data: {
+                name: roleName,
+                color: roleColor,
+                mentionable: false,
+                position: rolePositionObj.position,
+                hoist: true,
+            }
         })
     } catch (err) {
         functions.embed.errors.catch(err, client);
@@ -408,7 +410,7 @@ async function repositionRole(msg, client, args, officerDimension, officerRole) 
     
     var selectedRole = client.guilds.get(botSettings.guild).roles.get(roleToReposition.id);
         
-    selectedRole.setPosition(roleToPlaceUnder.calculatedPosition-1)
+    selectedRole.setPosition(roleToPlaceUnder.position-1)
         .then(updated => msg.channel.send(`Successfully repositioned the <@&${roleToReposition.id}> role!`))
         .catch(err => {
             functions.embed.errors.catch(err, client)
