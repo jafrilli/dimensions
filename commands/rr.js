@@ -101,16 +101,37 @@ async function rrCreate(msg, client, args) {
                 if(customEmoji) {if(!message.guild.emojis.get(customEmoji[3]) && !emoji) emoji = ['❓']}
                 // ? customEmoji[3] might cause errors if something changes to string.match()
                 rrObject[(emoji ? emoji[0] : customEmoji[3])] = role[role.length-1];
-                
+                msg.channel.send("Successfully added a reaction role! Type \'done\' if you're done, or add another one!");
             }, 
         );
         if(response == 'no_emoji') msg.channel.send("You're missing an emoji! Try again!");
         if(response == 'no_role') msg.channel.send("You're missing a role! Mention a role. Try again!");
     } while (response != 'done');
 
+    // list roles under description
+    var shouldList = await wizard.type.yesno(
+        msg, client, false, false, {title: "Add Role List?", description: "Would you like to list the roles and their emojis under your description? Respond \'yes\' or \'no\'!"},
+        {title: "Add Role List?", description: "Invalid Response! You must respond with either \'yes\' or \'no\' on whether you would like to list the roles and their emojis under your description."}
+    );
+    if (shouldList === false) return quit();
+    shouldList = shouldList.toLowerCase() == 'yes' ? true : false;
+
+    // generate role list
+    var roleList = "\n";
+    shouldList ? Object.keys(rrObject).forEach(emojiId => {
+        if(msg.guild.emojis.get(emojiId)) {
+            var emoji = msg.guild.emojis.get(emojiId)
+            var str = "<";
+            emoji.animated ? str += 'a' : '';
+            roleList += `${str}:${emoji.name}:${emojiId}> | <@&${rrObject[emojiId]}>\n`;
+        } else {
+            roleList += `${emojiId} | <@&${rrObject[emojiId]}>\n`;
+        }
+    }) : null;
+
     var rrEmbed = new MessageEmbed();
     rrEmbed.setTitle(title ? title : "");
-    rrEmbed.setDescription(description ? description : "");
+    rrEmbed.setDescription(shouldList ? (description ? description + roleList : roleList) : (description ? description : ""));
     rrEmbed.setColor(color);
     var rrEmbMsg = await msg.guild.channels.get(channel.id).send(rrEmbed);
 
@@ -131,8 +152,6 @@ async function rrCreate(msg, client, args) {
         (err) => {console.log("There was an error trying to add normal reaction role data to database")},
         (docs) => {}
     )
-
-    console.log(rrObject);
 }
 
 async function rrDelete(msg, client, args) {

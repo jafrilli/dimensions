@@ -263,6 +263,24 @@ module.exports.type = {
 
         return response.first().content.toString().toLowerCase() == "done" ? response.first() : allDimensionRoles.filter(rl => rl.name == response.first().content)[0];
     },
+    yesno: async (msg, client, skippable, skipValue, initialEmbed, attemptedEmbed) => {
+        var res = await this.default(
+            msg, 
+            client, 
+            skippable, 
+            skipValue,
+            initialEmbed,
+            (response) => {
+                if(typeof response.content == 'string') {
+                    if(response.content.toLowerCase() == 'yes' || response.content.toLowerCase() == 'no') {
+                        return response.content;
+                    }
+                }
+            },
+            attemptedEmbed
+        )
+        return res;
+    },
     mention: {
         channel: async (msg, client, skippable, skipValue, initialEmbed, attemptedEmbed) => {
             var res = await this.default(

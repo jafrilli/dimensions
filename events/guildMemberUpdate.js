@@ -25,9 +25,10 @@ module.exports.run = async (client, oldMember, newMember) => {
     for(var i = 0; i < addedRoles.length; i++) {
         if(client.cache.dimensions.keyArray().includes(addedRoles[i])) {
             doesInclude = true;
-            console.log('runs');
             // resets the cooldown timer, and teleports the user
             await functions.processes.teleport(client, addedRoles[i], oldMember, newMember);
+            // check if user is in cache, and add them if they aren't
+            if(!client.cache.members.get(oldMember.user.id)) client.cache.members.set(oldMember.user.id, {lastTeleport: null});
             client.cache.members.get(oldMember.user.id).lastTeleport = new Date();
             dc.onDimensionEnter(client, addedRoles[i], newMember);
             // var dimensionName = await client.guilds.get(botSettings.guild).roles.get(addedRoles[i]).name;

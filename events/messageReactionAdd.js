@@ -77,7 +77,6 @@ async function stuckReaction(client, reaction, user, rrmsg) {
     } else {
         var dimensionsToRemove = dimensionsUserIsIn.slice(0, dimensionsUserIsIn.length-1);
         var member = client.guilds.get(botSettings.guild).members.get(user.id);
-        console.log(dimensionsToRemove);
         await member.removeRoles(dimensionsToRemove);
         dmCha.send("You actually were in more than one dimensions! Fixed the issue!");
     }
