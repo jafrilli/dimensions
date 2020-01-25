@@ -99,10 +99,10 @@ async function rrCreate(msg, client, args) {
                 var emoji = message.content.match(emojiRegEx);
                 var role = message.content.match(roleRegEx);
                 // if user is not admin
-                if(!msg.author.permissions.has(['ADMINISTRATOR'])) {
-                    // check if role has power
-                    if(isModAdmin(msg, channel, role[role.length-1])) return msg.channel.send('Cannot add a role with high permissions! Try again!');
-                }
+                // if(!msg.author.permissions.has(['ADMINISTRATOR'])) {
+                //     // check if role has power
+                //     if(isModAdmin(msg, channel, role[role.length-1])) return msg.channel.send('Cannot add a role with high permissions! Try again!');
+                // }
                 if(customEmoji == null && emoji == null) return 'no_emoji';
                 if(role == null) return 'no_role';
                 // ! [WORKING] do this step when making the actual embed and reacting
