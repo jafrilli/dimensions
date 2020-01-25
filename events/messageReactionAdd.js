@@ -7,7 +7,7 @@ module.exports.run = async (client, reaction, user) => {
     if (user.bot) return;
     if (client.indicators.teleporting.includes(user.id)) return;
 
-    var teleportingTime = 0;
+    var teleportingTime = botSettings.teleporting.time;
     
     const rrmsg = client.cache.rrmessages.get(reaction.message.id);
     // is message a rrmessage?
