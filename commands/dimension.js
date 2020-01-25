@@ -285,6 +285,13 @@ async function dimensionCreate(msg, client, args) {
 
     // Create new dimension™ role:
     try{
+        var newOfficerRole = await msg.guild.roles.create({
+            data: {
+                name: `${newDimension.name} Corp. Officer`,
+                color: newDimension.color,
+                mentionable: true
+            }
+        });
         var newRole = await msg.guild.roles.create({
             data: {
                 name: `『${newDimension.name}』`,
@@ -300,9 +307,10 @@ async function dimensionCreate(msg, client, args) {
     }
     
     newDimension["_id"] = newRole.id;
-    newDimension.roles = [];
+    newDimension.roles = [newOfficerRole.id];
     newDimension.dateCreated = new Date();
     newDimension.password = null;
+    newDimension.officerRole = newOfficerRole.id;
 
     // Rich embed (finalizing)
     const dimensionEmbed = new MessageEmbed({
@@ -317,27 +325,12 @@ async function dimensionCreate(msg, client, args) {
             {name: "**Role**", value: `<@&${newRole.id}>`},
             {name: "**Color #**", value: newDimension.color},
             {name: "**Emoji ID**", value: newDimension.emoji.id},
-            {name: "**Roles**", value: "*Empty; Add to this list using \'>dimension addRole <dimensionRole> <desiredRoleToAdd>\'*"}
+            {name: "**Officer Role**", value: `<@&${newOfficerRole.id}>`},
+            {name: "**Roles**", value: "Add to this list using \'>dimension addRole <dimensionRole> <desiredRoleToAdd>\'*"}
         ],
     })
     await msg.channel.send(dimensionEmbed);
 
-    // Dimension.create(newDimension, (err, docs) => {
-    //     if(err) {
-    //         console.log("ERROR WHEN SAVING DIMENSION USING DIMENSION CREATE: \n" + err);
-    //         return;
-    //     }
-    //     if(docs) {
-    //         msg.channel.send(`Successfully created the \'${docs.name}\' dimension!`)
-    //     }
-    // });
-    // await functions.db.add(
-    //     client,
-    //     client.models.dimension, 
-    //     newDimension, 
-    //     async (err) => {console.log("ERROR WHEN SAVING DIMENSION USING DIMENSION CREATE: \n" + err);},
-    //     async (docs) => {msg.channel.send(`Successfully created the \'${docs.name}\' dimension!`)}
-    // );
     await df.dimensionCreate(
         client,
         newDimension,
@@ -345,19 +338,64 @@ async function dimensionCreate(msg, client, args) {
         (docs) => {msg.channel.send(`Successfully created the <@&${newDimension["_id"]}> dimension!`)}
     );
     
-    //? RECENTLY ADDED: Automatically makes a new category and starter channel
-    msg.guild.channels.create(newDimension.name, 'category', {
-        permissionOverwrites: [
-            {
-                id: newDimension["_id"],
-                allow: ['READ_MESSAGES', 'SEND_MESSAGES']
-            },
-            {
-                id: botSettings.guild,
-                deny: ['READ_MESSAGES', 'SEND_MESSAGES']
-            }
-        ]
-    });
+    const officerPerms = ['MANAGE_CHANNELS', 'MANAGE_WEBHOOKS', 'MANAGE_MESSAGES', 'READ_MESSAGE_HISTORY', 'MENTION_EVERYONE', 'MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'MOVE_MEMBERS', 'PRIORITY_SPEAKER'];
+    const memberPerms = ['VIEW_CHANNEL', 'SEND_MESSAGES']
+    //? RECENTLY ADDED: Automatically makes three new categories and 
+    try {
+        msg.guild.channels.create(newDimension.name+" one", {
+            type: 'category',
+            permissionOverwrites: [
+                {
+                    id: newRole,
+                    allow: memberPerms
+                },
+                {
+                    id: newOfficerRole,
+                    allow: officerPerms
+                },
+                {
+                    id: botSettings.guild,
+                    deny: memberPerms
+                }
+            ]
+        });
+        msg.guild.channels.create(newDimension.name+" two", {
+            type: 'category',
+            permissionOverwrites: [
+                {
+                    id: newRole,
+                    allow: memberPerms
+                },
+                {
+                    id: newOfficerRole,
+                    allow: officerPerms
+                },
+                {
+                    id: botSettings.guild,
+                    deny: memberPerms
+                }
+            ]
+        });
+        msg.guild.channels.create(newDimension.name+" three", {
+            type: 'category',
+            permissionOverwrites: [
+                {
+                    id: newRole,
+                    allow: memberPerms
+                },
+                {
+                    id: newOfficerRole,
+                    allow: officerPerms
+                },
+                {
+                    id: botSettings.guild,
+                    deny: memberPerms
+                }
+            ]
+        });
+    } catch(err) {
+        functions.embed.errors.catch(err, client);
+    }
     msg.channel.send(`Successfully created a category for the <@&${newDimension["_id"]}> dimension! Now you just gotta add more channels`);
 }
 

@@ -58,10 +58,10 @@ module.exports.default = async (msg, client, skippable, skipValue, initialEmbed,
             functions.embed.errors.catch(err, client);
         }
         // built-in quit detector
-        if(response.first().content === "quit") {msg.channel.send("You quit the wizard."); return false;}
+        if(response.first().content.toLowerCase() === "quit") {msg.channel.send("You quit the wizard."); return false;}
         
         if(skippable) {
-            if(response.first().content === "skip") {return skipValue;}
+            if(response.first().content.toLowerCase() === "skip") {return skipValue;}
         }
         // condition should return what it wants
         var item = await condition(response.first());
@@ -256,12 +256,63 @@ module.exports.type = {
                 functions.embed.errors.catch(err, client);
             }
             // built-in quit detector
-            if(response.first().content === "quit") {return false;}
+            if(response.first().content.toLowerCase() === "quit") {return false;}
             
             attempted = true;
-        } while (!dimensionRoleNames.includes(response.first().content) && response.first().content != "done")
+        } while (!dimensionRoleNames.includes(response.first().content) && response.first().content.toLowerCase() != "done")
 
         return response.first().content.toString().toLowerCase() == "done" ? response.first() : allDimensionRoles.filter(rl => rl.name == response.first().content)[0];
+    },
+    userDimensionRoles: async (msg, client, dimensionID, userID, initialEmbed, attemptedEmbed) => {
+        var skippable = false;
+        var checkedEmbeds = checkEmbed(skippable, initialEmbed, attemptedEmbed);
+        initialEmbed = checkedEmbeds.initial;
+        attemptedEmbed = checkedEmbeds.attempted;
+
+        const embedOne = new MessageEmbed();
+        var allUserDimensionRoles = [];
+        var dimensionRoles = client.cache.dimensions.get(dimensionID).roles;
+        var userRoles = msg.guild.members.get(userID).roles;
+        var dimensionRoleNames = [];
+        
+        await userRoles.forEach(role => {
+            
+            if(dimensionRoles.includes(role.id)) {
+                allUserDimensionRoles.push({
+                    id: role.id,
+                    name: role.name,
+                    position: role.position,
+                    calculatedPosition: role.calculatedPosition
+                });
+                dimensionRoleNames.push(role.name);
+            }
+        })
+
+        allUserDimensionRoles.sort((a, b) => a.position - b.position);
+        allUserDimensionRoles.reverse();
+
+        allUserDimensionRoles.forEach((rlObj, ind) => {
+            embedOne.addField(`**${rlObj.name}**`, `<@&${rlObj.id}>`)
+        })
+
+        var attempted = false;
+        do {
+            embedOne.setTitle(attempted ? attemptedEmbed.title : initialEmbed.title);
+            embedOne.setDescription(attempted ? attemptedEmbed.description : initialEmbed.description);
+            embedOne.setFooter(attempted ? attemptedEmbed.footer.text : initialEmbed.footer.text, attempted ? attemptedEmbed.footer.icon : initialEmbed.footer.icon);
+            await msg.channel.send(embedOne);
+            try {
+                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+            } catch(err) {
+                functions.embed.errors.catch(err, client);
+            }
+            // built-in quit detector
+            if(response.first().content.toLowerCase() === "quit") {return false;}
+            
+            attempted = true;
+        } while (!dimensionRoleNames.includes(response.first().content) && response.first().content.toLowerCase() != "done")
+
+        return response.first().content.toString().toLowerCase() == "done" ? response.first() : allUserDimensionRoles.filter(rl => rl.name == response.first().content)[0];
     },
     yesno: async (msg, client, skippable, skipValue, initialEmbed, attemptedEmbed) => {
         var res = await this.default(

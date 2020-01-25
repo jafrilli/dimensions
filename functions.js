@@ -478,6 +478,8 @@ module.exports.processes = {
         
         
         // ! fixed the v12 bug
+        // * There is an issue when using roles.remove and roles.add with arrays.
+        // * It is a Discord.js v12 bug.
         // console.log('previous roles:');
         // console.log(prs);
         // console.log('previous dimension role:')
@@ -489,7 +491,8 @@ module.exports.processes = {
         try{
             for(var i = 0; i < prs.length; i++) {
                 var role = prs[i];
-                await member.roles.remove(prs);
+                // * make sure it is only removing one role at a time
+                await member.roles.remove(role);
             }
         } catch(e) {
             this.embed.errors.catch(e, client);
@@ -497,7 +500,8 @@ module.exports.processes = {
 
         try{
             if(previousDimensionID[0]) {
-                await member.roles.remove(previousDimensionID);
+                // * make sure it is only removing one role at a time
+                await member.roles.remove(previousDimensionID[0]);
             }
         } catch(e) {
             this.embed.errors.catch(e, client);
