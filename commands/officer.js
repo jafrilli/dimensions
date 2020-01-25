@@ -592,6 +592,7 @@ async function modRRCreate(msg, client, args, officerDimension, officerRole) {
                 var customEmoji = message.content.match(customEmojiRegEx);
                 var emoji = message.content.match(emojiRegEx);
                 var role = message.content.match(roleRegEx);
+                if(!role && (!emoji || !customEmoji)) return 'invalid_input';
                 // if user is not admin
                 // if(!msg.author.permissions.has(['ADMINISTRATOR'])) {
                 //     // check if role has power
@@ -608,6 +609,7 @@ async function modRRCreate(msg, client, args, officerDimension, officerRole) {
                 msg.channel.send("Successfully added a reaction role! Type \'done\' if you're done, or add another one!");
             }, 
         );
+        if(response == 'invalid_input') msg.channel.send("That was an invalid input! Try again!");
         if(response == 'invalid_role') msg.channel.send("That is an invalid role! The role must be within your jurisdiction!");
         if(response == 'no_emoji') msg.channel.send("You're missing an emoji! Try again!");
         if(response == 'no_role') msg.channel.send("You're missing a role! Mention a role. Try again!");
