@@ -11,7 +11,10 @@ module.exports.run = async (msg, client, args) => {
     }
 
     if(msg.channel.type == 'dm') return;
-
+    
+    if(!msg.member.hasPermission('ADMINISTRATOR')) {
+        return msg.channel.send("You must be an Overlord™ to add reaction roles (FOR NOW).");
+    }
     
     client.indicators.usingCommand.push(msg.author.id);
     function removedID() {
