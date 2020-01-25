@@ -314,7 +314,7 @@ module.exports.embed = {
             if(dimension.welcome) {
                 embed.setTitle(dimension.welcome.embed.title ? dimension.welcome.embed.title.replace("<<user>>", member.user.username) : null,);
                 embed.setDescription(dimension.welcome.embed.description ? dimension.welcome.embed.description.replace("<<user>>", `<@${member.id}>`) : null);
-                embed.setThumbnail(member.user.avatarURL);
+                embed.setThumbnail(member.user.avatarURL());
                 embed.setColor(dimension.color)
                 // check if doc.graphic is a url, so the app doesn't crash.
                 if(isMediaURL(dimension.welcome.embed.graphic)){
