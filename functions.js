@@ -122,11 +122,11 @@ module.exports.embed = {
                 if(dimension.officerRole) { 
                     embed.addField("**Officer Role**",  `<@&${dimension.officerRole}>`);
                 }
-                var finalRolesString = "";
-                await dimension.roles.forEach((roleID) => {
-                    finalRolesString += `<@&${roleID}>, `;
-                })
-                embed.addField("**Obtainable Roles**", finalRolesString != "" ? finalRolesString : "No Roles...")
+                // var finalRolesString = "";
+                // await dimension.roles.forEach((roleID) => {
+                //     if(!this.toolkit.isOfficerRole(client, roleID)) finalRolesString += `<@&${roleID}>, `;
+                // })
+                // embed.addField("**Obtainable Roles**", finalRolesString != "" ? finalRolesString : "No Roles...")
                 return {
                     embed: embed, 
                     emoji: dimension.emoji,
@@ -695,4 +695,11 @@ module.exports.toolkit = {
     colorChecker,
     converter,
     botSettings,
+    isOfficerRole: (client, roleID) => {
+        for (let i = 0; i < client.cache.dimensions.length; i++) {
+            const obj = client.cache.dimensions[i];
+            if(roleID == obj.officerRole) return true;
+        }
+        return false;
+    }
 }

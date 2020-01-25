@@ -91,13 +91,18 @@ async function rrCreate(msg, client, args) {
             }, 
             (message) => {
                 if (message.content.toLowerCase() == 'done') return 'done';
-                // ! make sure that the role is not an admin or mod role
+                // ! [DONE] make sure that the role is not an admin or mod role
                 var customEmoji = message.content.match(customEmojiRegEx);
                 var emoji = message.content.match(emojiRegEx);
                 var role = message.content.match(roleRegEx);
+                // if user is not admin
+                if(!msg.author.permissions.has(['ADMINISTRATOR'])) {
+                    // check if role has power
+                    if(isModAdmin(msg, channel, role[role.length-1])) return msg.channel.send('Cannot add a role with high permissions! Try again!');
+                }
                 if(customEmoji == null && emoji == null) return 'no_emoji';
                 if(role == null) return 'no_role';
-                // ! do this step when making the actual embed and reacting
+                // ! [WORKING] do this step when making the actual embed and reacting
                 if(customEmoji) {if(!message.guild.emojis.get(customEmoji[3]) && !emoji) emoji = ['❓']}
                 // ? customEmoji[3] might cause errors if something changes to string.match()
                 rrObject[(emoji ? emoji[0] : customEmoji[3])] = role[role.length-1];
@@ -169,4 +174,10 @@ function graphicTest(msg, client, args) {
     }).catch(error => {
         functions.embed.errors.catch(error);
     })
+}
+
+function isModAdmin(msg, client, roleID) {
+    if(functions.toolkit.isOfficerRole(client, roleID)) return true;
+    if(msg.guild.members.get(roleID).permissions.has(['KICK_MEMBERS','BAN_MEMBERS'])) return true;
+    return false;
 }
