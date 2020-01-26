@@ -588,6 +588,7 @@ async function modRRCreate(msg, client, args, officerDimension, officerRole) {
             }, 
             (message) => {
                 if (message.content.toLowerCase() == 'done') return 'done';
+                if (message.content.toLowerCase() == 'quit') return 'quit';
                 // ! [DONE] make sure that the role is not an admin or mod role
                 var customEmoji = message.content.match(customEmojiRegEx);
                 var emoji = message.content.match(emojiRegEx);
@@ -613,6 +614,7 @@ async function modRRCreate(msg, client, args, officerDimension, officerRole) {
         if(response == 'invalid_role') msg.channel.send("That is an invalid role! The role must be within your jurisdiction!");
         if(response == 'no_emoji') msg.channel.send("You're missing an emoji! Try again!");
         if(response == 'no_role') msg.channel.send("You're missing a role! Mention a role. Try again!");
+        if(response == 'quit') return quit();
     } while (response != 'done');
 
     // list roles under description
