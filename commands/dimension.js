@@ -448,9 +448,10 @@ async function dimensionUpdate(msg, client, args) {
             ]
         }))
         try {
-            var whatToUpdate = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+            var whatToUpdate = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1, time: 15000, errors: ['time']})
         } catch(err) {
-            console.log("ERROR AWAITING WHAT TO UPDATE IN DIMENSIONUPDATE: \n" + err)
+            msg.channel.send('⏰ You ran out of time (+' + 15 + ' seconds)! Ending wizard...');
+            return;
         }
         if(whatToUpdate.first().content === "quit") { msg.channel.send("You quit the dimensions™ update wizard."); return }
         whatToUpdateAttempted = true;
@@ -1106,3 +1107,5 @@ var updateFunctions = {
         )
     },
 }
+
+module.exports.updateFunctions = updateFunctions;

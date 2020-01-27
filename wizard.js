@@ -13,6 +13,9 @@ const botSettings = require("./botSettings.json");
         }
     }
 */
+// * This time limit is linked to all these wizard nodes
+const timeLimit = 15000;
+
 function checkEmbed(skippable, initialEmbed, attemptedEmbed) {
     if(!initialEmbed.footer) {
         initialEmbed.footer = {
@@ -53,9 +56,10 @@ module.exports.default = async (msg, client, skippable, skipValue, initialEmbed,
             }
         }));
         try {
-            var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+            var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1, time: timeLimit, errors: ['time']})
         } catch(err) {
-            functions.embed.errors.catch(err, client);
+            msg.channel.send('⏰ You ran out of time (+' + timeLimit/1000 + ' seconds)! Ending wizard...');
+            return false;
         }
         // built-in quit detector
         if(response.first().content.toLowerCase() === "quit") {msg.channel.send("You quit the wizard."); return false;}
@@ -135,9 +139,10 @@ module.exports.type = {
                 }
             }));
             try{
-                var reactedEmote = await emojiRequest.awaitReactions(reaction => reaction.users.first().id === msg.author.id, {maxEmojis: 1});
-            }catch(err){
-                functions.embed.errors.catch(err, client);
+                var reactedEmote = await emojiRequest.awaitReactions(reaction => reaction.users.first().id === msg.author.id, {maxEmojis: 1, time: timeLimit, errors: ['time']})
+            } catch(err) {
+                msg.channel.send('⏰ You ran out of time (+' + timeLimit/1000 + ' seconds)! Ending wizard...');
+                return false;
             }
             attempted = true
         } while (!reactedEmote.first().emoji.id && !reactedEmote.first().emoji.url)
@@ -168,9 +173,10 @@ module.exports.type = {
             embedOne.setFooter(attempted ? attemptedEmbed.footer.text : initialEmbed.footer.text, attempted ? attemptedEmbed.footer.icon : initialEmbed.footer.icon);
             await msg.channel.send(embedOne);
             try {
-                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1, time: timeLimit, errors: ['time']})
             } catch(err) {
-                functions.embed.errors.catch(err, client);
+                msg.channel.send('⏰ You ran out of time (+' + timeLimit/1000 + ' seconds)! Ending wizard...');
+                return false;
             }
             if(response.first().content === "quit") { return false; }
             
@@ -202,9 +208,10 @@ module.exports.type = {
             embedOne.setFooter(attempted ? attemptedEmbed.footer.text : initialEmbed.footer.text, attempted ? attemptedEmbed.footer.icon : initialEmbed.footer.icon);
             await msg.channel.send(embedOne);
             try {
-                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1, time: timeLimit, errors: ['time']})
             } catch(err) {
-                functions.embed.errors.catch(err, client);
+                msg.channel.send('⏰ You ran out of time (+' + timeLimit/1000 + ' seconds)! Ending wizard...');
+                return false;
             }
             // built-in quit detector
             if(response.first().content === "quit") {return false;}
@@ -251,9 +258,10 @@ module.exports.type = {
             embedOne.setFooter(attempted ? attemptedEmbed.footer.text : initialEmbed.footer.text, attempted ? attemptedEmbed.footer.icon : initialEmbed.footer.icon);
             await msg.channel.send(embedOne);
             try {
-                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1, time: timeLimit, errors: ['time']})
             } catch(err) {
-                functions.embed.errors.catch(err, client);
+                msg.channel.send('⏰ You ran out of time (+' + timeLimit/1000 + ' seconds)! Ending wizard...');
+                return false;
             }
             // built-in quit detector
             if(response.first().content.toLowerCase() === "quit") {return false;}
@@ -302,9 +310,10 @@ module.exports.type = {
             embedOne.setFooter(attempted ? attemptedEmbed.footer.text : initialEmbed.footer.text, attempted ? attemptedEmbed.footer.icon : initialEmbed.footer.icon);
             await msg.channel.send(embedOne);
             try {
-                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+                var response = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1, time: timeLimit, errors: ['time']})
             } catch(err) {
-                functions.embed.errors.catch(err, client);
+                msg.channel.send('⏰ You ran out of time (+' + timeLimit/1000 + ' seconds)! Ending wizard...');
+                return false;
             }
             // built-in quit detector
             if(response.first().content.toLowerCase() === "quit") {return false;}
@@ -390,9 +399,10 @@ module.exports.type = {
             await msg.channel.send(confirmMessage);
             if(midConfirmationCB) await midConfirmationCB(msg, client, attempted);
             try {
-                var confirmation = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1})
+                var confirmation = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1, time: timeLimit, errors: ['time']})
             } catch(err) {
-                console.log("ERROR CONFIRMING THE POSTING OF AN ANNOUNCEMENT: \n" + err)
+                msg.channel.send('⏰ You ran out of time (+' + timeLimit/1000 + ' seconds)! Ending wizard...');
+                return false;
             }
             if(confirmation.first().content === "quit") { return false; }
             attempted = true;

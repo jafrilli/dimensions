@@ -2,6 +2,7 @@ const { MessageEmbed } = require("discord.js");
 const functions = require("../functions.js");
 const {graphics} = require("../graphics.js");
 const wizard = require("../wizard.js");
+const Wizard = require("../wizardTwo.js");
 
 module.exports.run = async (msg, client, args) => {
     
@@ -163,7 +164,28 @@ async function rrCreate(msg, client, args) {
 }
 
 async function rrDelete(msg, client, args) {
-
+//     var wiz = new Wizard();
+//     wiz.addTextNode(
+//         {title: 'woah'},
+//         {title: 'woah 2'},
+//         true,
+//         "damn",
+//         (m) => {return m.content},
+//         (i, responses) => {}
+//     );
+//     wiz.addTextNode(
+//         {title: '2 woah'},
+//         {title: '2 woah 2'},
+//         true,
+//         "2 damn",
+//         (m) => {return m.content},
+//         (i, responses) => {}
+//     )
+//     try {
+//         await wiz.run(msg, client);
+//     } catch(err) {
+//         console.log(err)
+// ;    }
 }
 
 async function rrLink(msg, client, args) {

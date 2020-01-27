@@ -3,6 +3,7 @@ const df = require("../classes/dimensionFuncs.js");
 const functions = require("../functions.js");
 const { MessageEmbed } = require("discord.js");
 const wizard = require("../wizard.js");
+const { updateFunctions } = require("./dimension.js");
 
 
 module.exports.run = async (msg, client, args) => {
@@ -55,32 +56,20 @@ module.exports.run = async (msg, client, args) => {
             await dimensionWelcomeMessage(msg, client, args, officerDimension);
             removedID();
             break;
-        case "create":
-            await createDimensionRole(msg, client, args, officerDimension);
-            removedID();
-            break;
-        case "remove":
-            await removeDimensionRole(msg, client, args, officerDimension, officerRole);
-            removedID();
-            break;
-        case "reposition":
-            await repositionRole(msg, client, args, officerDimension, officerRole);
+        case "role": 
+            await modRole(msg, client, args, officerDimension, officerRole);
             removedID();
             break;
         case "help":
             await modHelp(msg, client, args, officerDimension);
             removedID();
             break;
-        case "rmrole":
-            await modRemoveRole(msg, client, args, officerDimension);
-            removedID();
-            break;
-        case "giverole": 
-            await modGiveRole(msg, client, args, officerDimension);
-            removedID();
-            break;
         case "rr": 
             await modRRCreate(msg, client, args, officerDimension, officerRole);
+            removedID();
+            break;
+        case "dimension":
+            await dimensionUpdate(msg, client, args, officerDimension);
             removedID();
             break;
         default:
@@ -277,7 +266,37 @@ async function dimensionWelcomeMessage(msg, client, args, officerDimension) {
     );
 }
 
-async function createDimensionRole(msg, client, args, officerDimension) {
+// role series
+async function modRole(msg, client, args, officerDimension, officerRole) {
+    if(args[1]) {
+        switch(args[1]) {
+            case "create":
+                await createRole(msg, client, args, officerDimension);
+                break;
+            case "delete":
+                await deleteRole(msg, client, args, officerDimension, officerRole);
+                break;
+            case "update":
+                await updateRole(msg, client, args, officerDimension, officerRole);
+                break;
+            case "remove":
+                await removeRole(msg, client, args, officerDimension);
+                break;
+            case "give": 
+                await giveRole(msg, client, args, officerDimension);
+                break;
+            case "help": 
+                await roleHelp(msg, client, args, officerDimension);
+                break;
+            default:
+                await msg.channel.send(`That was an invalid '>mod role' argument. Use \'>mod role help\' to see different commands regarding roles`)
+                return;
+        }
+    } else {
+        msg.channel.send(`Type \'>mod role help\' for everything related to roles!`);
+    }
+}
+async function createRole(msg, client, args, officerDimension) {
 
     var roleName = await wizard.type.text(
         msg,
@@ -354,8 +373,7 @@ async function createDimensionRole(msg, client, args, officerDimension) {
         false
     )
 }
-
-async function removeDimensionRole(msg, client, args, officerDimension, officerRole) {
+async function deleteRole(msg, client, args, officerDimension, officerRole) {
     
     var roleToDelete = await wizard.type.positionedDimensionRole(
         msg,
@@ -385,88 +403,157 @@ async function removeDimensionRole(msg, client, args, officerDimension, officerR
         true
     )
 }
-
-async function repositionRole(msg, client, args, officerDimension, officerRole) {
-    var roleToReposition = await wizard.type.positionedDimensionRole(
+async function updateRole(msg, client, args, officerDimension, officerRole) {
+    var roleToUpdate = await wizard.type.positionedDimensionRole(
         msg,
         client,
         officerDimension,
         {
-            title: "__**Reposition Dimension™ Role: Role**__",
-            description: `Type the __**name**__ of the role you want to reposition from the <@&${officerDimension}> dimension™. You cannot reposition the officer role, even though it's on the list.`
+            title: "__**Update Dimension™ Role: Role**__",
+            description: `Type the __**name**__ of the role you want to update from the <@&${officerDimension}> dimension™. You cannot reposition the officer role, even though it's on the list.`
         },
         {
-            title: "__**Reposition Dimension™ Role: Role**__",
-            description: "Incorrect input! Type the __**name**__ of the role you want to reposition from your dimension™. You cannot reposition the officer role, even though it's on the list."
+            title: "__**Update Dimension™ Role: Role**__",
+            description: "Incorrect input! Type the __**name**__ of the role you want to update from your dimension™. You cannot reposition the officer role, even though it's on the list."
         }
     );
-    if(roleToReposition === false) return msg.channel.send("Ended dimension™ role repositioning.");
+    if(roleToUpdate === false) return msg.channel.send("Ended dimension™ role updating.");
 
-    if(roleToReposition.id == officerRole) return msg.channel.send("You cannot reposition the officer role! Contact an admin if you need to. Ended wizard.")
-
-    var roleToPlaceUnder = await wizard.type.positionedDimensionRole(
-        msg,
-        client,
-        officerDimension,
-        {
-            title: "__**Reposition Dimension™ Role: Position**__",
-            description: `Type the __**name**__ of the role you want to place the <@&${roleToReposition.id}> role under. By that logic, you cannot place a role higher than the officer role.`
-        },
-        {
-            title: "__**Reposition Dimension™ Role: Position**__",
-            description: `Incorrect input! Type the __**name**__ of the role you want to place the <@&${roleToReposition.id}> role under. By that logic, you cannot place a role higher than the officer role.`
-        }
-    );
-    if(roleToPlaceUnder === false) return msg.channel.send("Ended dimension™ role repositioning.");
+    if(roleToUpdate.id == officerRole) return msg.channel.send("You cannot edit the officer role! Contact an admin if you need to. Ended wizard.")
     
-    var selectedRole = client.guilds.get(botSettings.guild).roles.get(roleToReposition.id);
+    const updateOptions = [
+        "name",
+        "color",
+        "position",
+        "hoist",
+        // "password",
+        // "officer"
+    ]
+    var whatToUpdateAttempted = false;
+    do {
+        var whatToUpdateDescription = `Here's a list of things you can update on the <@&${roleToUpdate.id}> role. Type what you want to update (not case-sensitive dw :3), or type \'quit\' to stop this process:`;
+        if(whatToUpdateAttempted) {
+            whatToUpdateDescription = "Your answer has to be one of the following settings! Try again, or type \'quit\' to stop this process:"
+        }
+        await msg.channel.send(new MessageEmbed({
+            description: whatToUpdateDescription,
+            fields: [
+                // MAKE SURE TO UPDATE updateOptions[] ABOVE IF U UPDATE THIS ARRAY
+                {name: "Name", value: "Name of the role", inline: true},
+                {name: "Color", value: "Color of the role", inline: true},
+                {name: "Position", value: "Position of the role (allows you to reposition it)", inline: true},
+                {name: "Hoist", value: "Toggle whether the role is hoisted or not", inline: true},
+                // {name: "Password", value: "Password of the dimension™ (not an option during creation)", inline: true},
+                // {name: "Officer", value: "Officer role of the dimension™ (not an option during creation)", inline: true}
+            ]
+        }))
+        try {
+            var whatToUpdate = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1, time: 15000, errors: ['time']})
+        } catch(err) {
+            msg.channel.send('⏰ You ran out of time (+' + 15 + ' seconds)! Ending wizard...');
+            return;
+        }
+        if(whatToUpdate.first().content === "quit") { msg.channel.send("You quit the dimensions™ update wizard."); return }
+        whatToUpdateAttempted = true;
+    } while (!updateOptions.includes(whatToUpdate.first().content.toLowerCase()))
+    var whatToUpdateResponse = whatToUpdate.first().content.toLowerCase();
+
+    switch (whatToUpdateResponse) {
+        case "name":
+            await updateTheRole.updateName(roleToUpdate, msg, client);
+            // console.log("name")
+            break;
+        case "color":
+            await updateTheRole.updateColor(roleToUpdate, msg, client);
+            // console.log("color")
+            break;
+        case "position":
+            await updateTheRole.updatePosition(roleToUpdate, msg, client, officerDimension);
+            // console.log("emoji")
+            break;
+        case "hoist": 
+            await updateTheRole.updateHoist(roleToUpdate, msg, client);
+            // console.log("graphic")
+            break;
+        default: 
+            console.log("super weird error. you should literally never get this. like ever. mod role")
+            break;
+    }
+}
+var updateTheRole = {
+    updateName: async (roleToUpdate, msg, client) => {
+        var newName = await wizard.type.text(
+            msg, client, false, " ", 
+            {title: "__**Update Dimension™ Role: Name**__", description: "Enter the new name of the role:"}
+        );
+        if(newName === false) return msg.channel.send("Ended dimension™ role updating.")
+
+        var selectedRole = client.guilds.get(botSettings.guild).roles.get(roleToUpdate.id);
+
+        try {
+            await selectedRole.edit({name: newName});
+        } catch (err) {return functions.embed.errors.catch(err, client)}
+
+        return msg.channel.send(`Successfully updated the name of the <@&${selectedRole.id}> role!`)
+    },
+    updateColor: async (roleToUpdate, msg, client) => {
+        var newColor = await wizard.type.color(
+            msg, client, false, false, 
+            {title: "__**Update Dimension™ Role: Color**__", description: "Enter the new color of the role in hex form. You **must** add a \'#\' in front of the hexadecimal. EX: \'#FFFFFF\':"}
+        );
+        if(newColor === false) return msg.channel.send("Ended dimension™ role updating.")
         
-    selectedRole.setPosition(roleToPlaceUnder.position-1)
-        .then(updated => msg.channel.send(`Successfully repositioned the <@&${roleToReposition.id}> role!`))
-        .catch(err => {
-            functions.embed.errors.catch(err, client)
-            return msg.channel.send("There was an error. Contact admin!");
-        });
+        var selectedRole = client.guilds.get(botSettings.guild).roles.get(roleToUpdate.id);
+        
+        try {
+            await selectedRole.edit({color: newColor});
+        } catch (err) {return functions.embed.errors.catch(err, client)}
 
+        return msg.channel.send(`Successfully updated the color of the <@&${selectedRole.id}> role!`)
+    },
+    updatePosition: async (roleToUpdate, msg, client, officerDimension) => {
+        var roleToPlaceUnder = await wizard.type.positionedDimensionRole(
+            msg,
+            client,
+            officerDimension,
+            {
+                title: "__**Update Dimension™ Role: Position**__",
+                description: `Type the __**name**__ of the role you want to place the <@&${roleToUpdate.id}> role under. By that logic, you cannot place a role higher than the officer role.`
+            },
+            {
+                title: "__**Update Dimension™ Role: Position**__",
+                description: `Incorrect input! Type the __**name**__ of the role you want to place the <@&${roleToUpdate.id}> role under. By that logic, you cannot place a role higher than the officer role.`
+            }
+        );
+        if(roleToPlaceUnder === false) return msg.channel.send("Ended dimension™ role updating.");
+        
+        var selectedRole = client.guilds.get(botSettings.guild).roles.get(roleToUpdate.id);
+            
+        selectedRole.setPosition(roleToPlaceUnder.position-1)
+            .then(updated => msg.channel.send(`Successfully repositioned the <@&${roleToUpdate.id}> role!`))
+            .catch(err => {
+                functions.embed.errors.catch(err, client)
+                return msg.channel.send("There was an error. Contact admin!");
+            });
+    },
+    updateHoist: async (roleToUpdate, msg, client) => {
+        var shouldHoist = await wizard.type.yesno(
+            msg, client, false, false, 
+            {title: "__**Update Dimension™ Role: Hoist**__", description: "Do you want the role to be hoisted? Enter \'yes\' or \'no\':"},
+            {title: "__**Update Dimension™ Role: Hoist**__", description: "Your answer **must** be either \'yes\' or \'no\'. Do you want the role to be hoisted?:"}
+        );
+        if(shouldHoist === false) return msg.channel.send("Ended dimension™ role updating.")
+        shouldHoist = shouldHoist.toLowerCase() == 'yes' ? true : false;
+
+        var selectedRole = client.guilds.get(botSettings.guild).roles.get(roleToUpdate.id);
+
+        try {
+            await selectedRole.edit({hoist: shouldHoist});
+        } catch (err) {return functions.embed.errors.catch(err, client)}
+        return msg.channel.send(`Successfully set hoist for the <@&${selectedRole.id}> role to ${shouldHoist}!`)
+    },
 }
-
-async function modHelp(msg, client, args, officerDimension) {
-    const embed = new MessageEmbed({
-        title: "__**Mod Commands Help**__",
-        description: "All of these commands __do not__ need arguments (text after them) **EXCEPT BAN & UNBAN**. They are all setup wizards. Type \'quit\' at anytime during the setup wizard to cancel the process (EXCEPT IN THE EMOJI/REACT PHASE. STILL WORKING ON THAT).",
-        fields: [
-            {name: ">mod giverole", value: `Setup wizard for giving role to user in the <@&${officerDimension}> dimension.`},
-            {name: ">mod rmrole", value: `Setup wizard for removing role from user in the <@&${officerDimension}> dimension.`},
-            {name: ">mod rr", value: `Setup wizard for creating a reaction role message in the <@&${officerDimension}> dimension.`},
-            {name: ">mod ban", value: `Bans a member from <@&${officerDimension}>.`},
-            {name: ">mod unban", value: `Unbans a member from <@&${officerDimension}>.`},
-            {name: ">mod announce", value: `Takes you through a setup wizard for a <@&${officerDimension}> announcement.`},
-            {name: ">mod welcome", value: `Takes you through a setup wizard that helps setup a welcome message for <@&${officerDimension}>.`},
-            {name: ">mod create", value: `Setup wizard for a new role for <@&${officerDimension}>.`},
-            {name: ">mod remove", value: `Setup wizard to delete a role from <@&${officerDimension}>.`},
-            {name: ">mod reposition", value: `Setup wizard to reposition a role from <@&${officerDimension}>.`},
-            {name: ">mod help", value: `Lists all available commands (this)`},
-        ]
-    });
-
-    await msg.channel.send(embed);
-    await msg.channel.send("Done :3")
-}
-// // returns a bool, with true being user in right dimension and false the opposite
-// async function checkUserInRightDimension(client, user, officerDimension) {
-//     var member = client.guilds.get(botSettings.guild).members.get(user);
-//     var memberRolesArray = member.roles.array()
-//     for(var i=0; i<memberRolesArray.length; i++) {
-//         if(client.cache.dimensions.keyArray().includes(memberRolesArray[i])) {
-//             if(memberRolesArray[i] === officerDimension) {
-//                 return true;
-//             }
-//         }
-//     }
-//     return false;
-// }
-
-async function modGiveRole(msg, client, args, officerDimension) {
+async function giveRole(msg, client, args, officerDimension) {
 
     do {
         var isValidUser = false;
@@ -499,8 +586,7 @@ async function modGiveRole(msg, client, args, officerDimension) {
 
     return msg.channel.send(`Successfully gave <@${member.id}> the <@&${roleToGive.id}> role!`);
 }
-
-async function modRemoveRole(msg, client, args, officerDimension) {
+async function removeRole(msg, client, args, officerDimension) {
 
     do {
         var isValidUser = false;
@@ -532,6 +618,56 @@ async function modRemoveRole(msg, client, args, officerDimension) {
     }
 
     return msg.channel.send(`Removed the <@&${roleToRemove.id}> role from <@${member.id}>!`);
+}
+async function roleHelp(msg, client, args, officerDimension) {
+    const embed = new MessageEmbed({
+        title: "__**Mod ROLE Commands Help**__",
+        description: "All of these commands __do not__ need arguments (text after them). They are all setup wizards. Type \'quit\' at anytime during the setup wizard to cancel the process.",
+        fields: [
+            {name: ">mod role create", value: `Setup wizard for a new role for <@&${officerDimension}>.`},
+            {name: ">mod role delete", value: `Setup wizard to delete a role from <@&${officerDimension}>.`},
+            {name: ">mod role update", value: `Setup wizard to update a role from <@&${officerDimension}>.`},
+            {name: ">mod role give", value: `Setup wizard for giving role to user in the <@&${officerDimension}> dimension.`},
+            {name: ">mod role remove", value: `Setup wizard for removing role from user in the <@&${officerDimension}> dimension.`},
+            {name: ">mod role help", value: `Lists all available commands (this)`},
+        ]
+    });
+
+    await msg.channel.send(embed);
+    await msg.channel.send("Done :3")
+}
+// // returns a bool, with true being user in right dimension and false the opposite
+// async function checkUserInRightDimension(client, user, officerDimension) {
+//     var member = client.guilds.get(botSettings.guild).members.get(user);
+//     var memberRolesArray = member.roles.array()
+//     for(var i=0; i<memberRolesArray.length; i++) {
+//         if(client.cache.dimensions.keyArray().includes(memberRolesArray[i])) {
+//             if(memberRolesArray[i] === officerDimension) {
+//                 return true;
+//             }
+//         }
+//     }
+//     return false;
+// }
+
+async function modHelp(msg, client, args, officerDimension) {
+    const embed = new MessageEmbed({
+        title: "__**Mod Commands Help**__",
+        description: "All of these commands __do not__ need arguments (text after them) **EXCEPT BAN & UNBAN**. They are all setup wizards. Type \'quit\' at anytime during the setup wizard to cancel the process (EXCEPT IN THE EMOJI/REACT PHASE. STILL WORKING ON THAT).",
+        fields: [
+            {name: ">mod role help", value: `FOR ALL <@&${officerDimension}> ROLE COMMANDS`},
+            {name: ">mod ban <@user>", value: `Bans a member from <@&${officerDimension}>.`},
+            {name: ">mod unban <@user>", value: `Unbans a member from <@&${officerDimension}>.`},
+            {name: ">mod announce", value: `Takes you through a setup wizard for a <@&${officerDimension}> announcement.`},
+            {name: ">mod welcome", value: `Takes you through a setup wizard that helps setup a welcome message for <@&${officerDimension}>.`},
+            {name: ">mod rr", value: `Setup wizard for creating a reaction role message in the <@&${officerDimension}> dimension.`},
+            {name: ">mod dimension", value: `Allows you to change <@&${officerDimension}> details like the name, description, color, etc...`},
+            {name: ">mod help", value: `Lists all available commands (this)`},
+        ]
+    });
+
+    await msg.channel.send(embed);
+    await msg.channel.send("Done :3")
 }
 
 async function modRRCreate(msg, client, args, officerDimension, officerRole) {
@@ -663,4 +799,85 @@ async function modRRCreate(msg, client, args, officerDimension, officerRole) {
     )
 
     msg.channel.send(`Successfully created a new reaction role message in the <#${channel.id}> channel!`);
+}
+
+// ! dimensions update should always be the last in the list of funcs due to its size
+async function dimensionUpdate(msg, client, args, officerDimension) {
+    
+    // select a dimension
+    const selectedDimensionID = officerDimension;
+
+    await functions.embed.dimension.detailedDetails(selectedDimensionID, msg, client);
+    const updateOptions = [
+        "name",
+        "description",
+        "color",
+        "emoji",
+        "graphic",
+        // "password",
+        // "officer"
+    ]
+    var whatToUpdateAttempted = false;
+    do {
+        var whatToUpdateDescription = `Here's a list of things you can update on the <@&${selectedDimensionID}> dimension™. Type what you want to update (not case-sensitive dw :3), or type \'quit\' to stop this process:`;
+        if(whatToUpdateAttempted) {
+            whatToUpdateDescription = "Your answer has to be one of the following settings! Try again, or type \'quit\' to stop this process:"
+        }
+        await msg.channel.send(new MessageEmbed({
+            description: whatToUpdateDescription,
+            fields: [
+                // MAKE SURE TO UPDATE updateOptions[] ABOVE IF U UPDATE THIS ARRAY
+                {name: "Name", value: "Name of the dimension™", inline: true},
+                {name: "Description", value: "Description of the dimension™", inline: true},
+                {name: "Color", value: "Color of the dimension™ (including role)", inline: true},
+                {name: "Emoji", value: "Emoji of the dimension™", inline: true},
+                {name: "Graphic", value: "Graphic of the dimension™ (not an option during creation)", inline: true},
+                // {name: "Password", value: "Password of the dimension™ (not an option during creation)", inline: true},
+                // {name: "Officer", value: "Officer role of the dimension™ (not an option during creation)", inline: true}
+            ]
+        }))
+        try {
+            var whatToUpdate = await msg.channel.awaitMessages(m => m.author.id === msg.author.id, {max: 1, time: 15000, errors: ['time']})
+        } catch(err) {
+            msg.channel.send('⏰ You ran out of time (+' + 15 + ' seconds)! Ending wizard...');
+            return;
+        }
+        if(whatToUpdate.first().content === "quit") { msg.channel.send("You quit the dimensions™ update wizard."); return }
+        whatToUpdateAttempted = true;
+    } while (!updateOptions.includes(whatToUpdate.first().content.toLowerCase()))
+    var whatToUpdateResponse = whatToUpdate.first().content.toLowerCase();
+
+    switch (whatToUpdateResponse) {
+        case "name":
+            await updateFunctions.updateName(selectedDimensionID, msg, client);
+            // console.log("name")
+            break;
+        case "description":
+            await updateFunctions.updateDescription(selectedDimensionID, msg, client);
+            // console.log("description")
+            break;
+        case "color":
+            await updateFunctions.updateColor(selectedDimensionID, msg, client);
+            // console.log("color")
+            break;
+        case "emoji":
+            await updateFunctions.updateEmoji(selectedDimensionID, msg, client);
+            // console.log("emoji")
+            break;
+        case "graphic": 
+            await updateFunctions.updateGraphic(selectedDimensionID, msg, client);
+            // console.log("graphic")
+            break;
+        // case "password": 
+        //     await updateFunctions.updatePassword(selectedDimensionID, msg, client);
+        //     // console.log("password")
+        //     break;
+        // case "officer": 
+        //     await updateFunctions.updateOfficer(selectedDimensionID, msg, client);
+        //     // console.log("officer")
+        //     break;
+        default: 
+            console.log("super weird error. you should literally never get this. like ever")
+            break;
+    }
 }
