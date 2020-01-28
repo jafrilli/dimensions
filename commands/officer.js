@@ -72,6 +72,10 @@ module.exports.run = async (msg, client, args) => {
             await dimensionUpdate(msg, client, args, officerDimension);
             removedID();
             break;
+        case "newcategory":
+            await modCategoryCreate(msg, client, args, officerDimension, officerRole);
+            removedID();
+            break;
         default:
             await msg.channel.send(`That was an invalid argument. Use \'>mod help\' to see different commands.`)
             removedID();
@@ -679,6 +683,7 @@ async function modHelp(msg, client, args, officerDimension) {
             {name: ">mod welcome", value: `Takes you through a setup wizard that helps setup a welcome message for <@&${officerDimension}>.`},
             {name: ">mod rr", value: `Setup wizard for creating a reaction role message in the <@&${officerDimension}> dimension.`},
             {name: ">mod dimension", value: `Allows you to change <@&${officerDimension}> details like the name, description, color, etc...`},
+            {name: ">mod newcategory", value: `Creates a new category for <@&${officerDimension}>.`},
             {name: ">mod help", value: `Lists all available commands (this)`},
         ]
     });
@@ -816,6 +821,37 @@ async function modRRCreate(msg, client, args, officerDimension, officerRole) {
     )
 
     msg.channel.send(`Successfully created a new reaction role message in the <#${channel.id}> channel!`);
+}
+
+async function modCategoryCreate(msg, client, args, officerDimension, officerRole) {
+    const officerPerms = ['MANAGE_ROLES', 'MANAGE_CHANNELS', 'MANAGE_WEBHOOKS', 'MANAGE_MESSAGES', 'READ_MESSAGE_HISTORY', 'MENTION_EVERYONE', 'MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'MOVE_MEMBERS', 'PRIORITY_SPEAKER'];
+    const memberPerms = ['VIEW_CHANNEL', 'SEND_MESSAGES'];
+    const dimRole = await msg.guild.roles.get(officerDimension);
+    const offRole = await msg.guild.roles.get(officerRole);
+    //? RECENTLY ADDED: Automatically makes three new categories and 
+    try {
+        console.log(client.cache.dimensions.get(officerDimension).name);
+        msg.guild.channels.create(client.cache.dimensions.get(officerDimension).name +" new", {
+            type: 'category',
+            permissionOverwrites: [
+                {
+                    id: dimRole,
+                    allow: memberPerms
+                },
+                {
+                    id: offRole,
+                    allow: officerPerms
+                },
+                {
+                    id: botSettings.guild,
+                    deny: memberPerms
+                }
+            ]
+        });
+    } catch(err) {
+        return functions.embed.errors.catch(err, client);
+    }
+    return msg.channel.send(`Successfully created a new category for <@&${officerDimension}>!`)
 }
 
 // ! dimensions update should always be the last in the list of funcs due to its size

@@ -338,7 +338,7 @@ async function dimensionCreate(msg, client, args) {
         (docs) => {msg.channel.send(`Successfully created the <@&${newDimension["_id"]}> dimension!`)}
     );
     
-    const officerPerms = ['MANAGE_PERMISSIONS', 'MANAGE_CHANNELS', 'MANAGE_WEBHOOKS', 'MANAGE_MESSAGES', 'READ_MESSAGE_HISTORY', 'MENTION_EVERYONE', 'MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'MOVE_MEMBERS', 'PRIORITY_SPEAKER'];
+    const officerPerms = ['MANAGE_ROLES', 'MANAGE_CHANNELS', 'MANAGE_WEBHOOKS', 'MANAGE_MESSAGES', 'READ_MESSAGE_HISTORY', 'MENTION_EVERYONE', 'MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'MOVE_MEMBERS', 'PRIORITY_SPEAKER'];
     const memberPerms = ['VIEW_CHANNEL', 'SEND_MESSAGES']
     //? RECENTLY ADDED: Automatically makes three new categories and 
     try {
