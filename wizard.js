@@ -158,12 +158,12 @@ module.exports.type = {
         initialEmbed = checkedEmbeds.initial;
         attemptedEmbed = checkedEmbeds.attempted;
 
-        var allDimensions = {};
+        var allDimensions = [];
         const embedOne = new MessageEmbed();
         
-        await client.cache.dimensions.forEach(dimension => {
-            allDimensions[dimension.name] = dimension["_id"];
-            embedOne.addField(`**${dimension.name}**`, `<@&${dimension["_id"]}>`);
+        await client.cache.dimensions.array().forEach((dimension, ind) => {
+            allDimensions.push(dimension["_id"]);
+            embedOne.addField(`\`${ind+1}.\`  **${dimension.name}**`, `<@&${dimension["_id"]}>`);
         })
             
         var attempted = false;
@@ -179,13 +179,14 @@ module.exports.type = {
                 return false;
             }
             if(response.first().content === "quit") { return false; }
-            
+            console.log(allDimensions[parseInt(response.first().content-1)]);
             attempted = true;
-        } while (!Object.keys(allDimensions).includes(response.first().content))
+        // } while (!Object.keys(allDimensions).includes(response.first().content))
+        } while (!allDimensions[parseInt(response.first().content)-1])
     
-        return allDimensions[response.first().content];
+        return allDimensions[parseInt(response.first().content)-1];
     },
-    // returns role
+    // ! DO NOT USE dimensionRole() FOR ANYTHING EXCEPT >dimension deleteRoles. IT HAS A 'done' LISTENER
     dimensionRole: async (msg, client, dimensionID, initialEmbed, attemptedEmbed) => {
         var skippable = false;
         var checkedEmbeds = checkEmbed(skippable, initialEmbed, attemptedEmbed);
@@ -193,12 +194,12 @@ module.exports.type = {
         attemptedEmbed = checkedEmbeds.attempted;
 
         const embedOne = new MessageEmbed();
-        var allDimensionRoles = {};
+        var allDimensionRoles = [];
         
-        await client.cache.dimensions.get(dimensionID).roles.forEach(role => {
+        await client.cache.dimensions.get(dimensionID).roles.forEach((role, ind) => {
             var roleName = client.guilds.get(botSettings.guild).roles.get(role).name
-            allDimensionRoles[roleName] = role;
-            embedOne.addField(`**${roleName}**`, `<@&${role}>`)
+            allDimensionRoles.push(role);
+            embedOne.addField(`\`${ind+1}.\`  **${roleName}**`, `<@&${role}>`)
         })
             
         var attempted = false;
@@ -217,11 +218,12 @@ module.exports.type = {
             if(response.first().content === "quit") {return false;}
             
             attempted = true;
-        } while (!Object.keys(allDimensionRoles).includes(response.first().content) && response.first().content != "done")
+        } while (!allDimensionRoles[parseInt(response.first().content)-1] && response.first().content != "done")
 
         
-        return response.first().content.toString().toLowerCase() == "done" ? response.first() : allDimensionRoles[response.first().content];
+        return response.first().content.toString().toLowerCase() == "done" ? response.first() : allDimensionRoles[parseInt(response.first().content)-1];
     },
+    // * This is what to use for almost all dimension role selection tasks
     positionedDimensionRole: async (msg, client, dimensionID, initialEmbed, attemptedEmbed) => {
         var skippable = false;
         var checkedEmbeds = checkEmbed(skippable, initialEmbed, attemptedEmbed);
@@ -231,7 +233,6 @@ module.exports.type = {
         const embedOne = new MessageEmbed();
         var allDimensionRoles = [];
         var dimensionRoles = client.cache.dimensions.get(dimensionID).roles;
-        var dimensionRoleNames = [];
         
         await dimensionRoles.forEach(roleID => {
             var role = client.guilds.get(botSettings.guild).roles.get(roleID);
@@ -241,14 +242,13 @@ module.exports.type = {
                 position: role.position,
                 calculatedPosition: role.calculatedPosition
             });
-            dimensionRoleNames.push(role.name);
         })
 
         allDimensionRoles.sort((a, b) => a.position - b.position);
         allDimensionRoles.reverse();
 
         allDimensionRoles.forEach((rlObj, ind) => {
-            embedOne.addField(`**${rlObj.name}**`, `<@&${rlObj.id}>`)
+            embedOne.addField(`\`${ind+1}.\`  **${rlObj.name}**`, `<@&${rlObj.id}>`)
         })
             
         var attempted = false;
@@ -267,9 +267,9 @@ module.exports.type = {
             if(response.first().content.toLowerCase() === "quit") {return false;}
             
             attempted = true;
-        } while (!dimensionRoleNames.includes(response.first().content) && response.first().content.toLowerCase() != "done")
+        } while (!allDimensionRoles[parseInt(response.first().content)-1])
 
-        return response.first().content.toString().toLowerCase() == "done" ? response.first() : allDimensionRoles.filter(rl => rl.name == response.first().content)[0];
+        return allDimensionRoles[parseInt(response.first().content)-1];
     },
     userDimensionRoles: async (msg, client, dimensionID, userID, initialEmbed, attemptedEmbed) => {
         var skippable = false;
@@ -281,7 +281,6 @@ module.exports.type = {
         var allUserDimensionRoles = [];
         var dimensionRoles = client.cache.dimensions.get(dimensionID).roles;
         var userRoles = msg.guild.members.get(userID).roles;
-        var dimensionRoleNames = [];
         
         await userRoles.forEach(role => {
             
@@ -292,7 +291,6 @@ module.exports.type = {
                     position: role.position,
                     calculatedPosition: role.calculatedPosition
                 });
-                dimensionRoleNames.push(role.name);
             }
         })
 
@@ -300,7 +298,7 @@ module.exports.type = {
         allUserDimensionRoles.reverse();
 
         allUserDimensionRoles.forEach((rlObj, ind) => {
-            embedOne.addField(`**${rlObj.name}**`, `<@&${rlObj.id}>`)
+            embedOne.addField(`\`${ind+1}.\` **${rlObj.name}**`, `<@&${rlObj.id}>`)
         })
 
         var attempted = false;
@@ -319,9 +317,9 @@ module.exports.type = {
             if(response.first().content.toLowerCase() === "quit") {return false;}
             
             attempted = true;
-        } while (!dimensionRoleNames.includes(response.first().content) && response.first().content.toLowerCase() != "done")
+        } while (!allUserDimensionRoles[parseInt(response.first().content)-1])
 
-        return response.first().content.toString().toLowerCase() == "done" ? response.first() : allUserDimensionRoles.filter(rl => rl.name == response.first().content)[0];
+        return allUserDimensionRoles[parseInt(response.first().content)-1];
     },
     yesno: async (msg, client, skippable, skipValue, initialEmbed, attemptedEmbed) => {
         var res = await this.default(

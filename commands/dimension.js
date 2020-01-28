@@ -238,11 +238,11 @@ async function deleteRolesWizard(msg, client, args) {
             selectedDimensionID,
             {
                 title: "__**Delete Dimension™ Roles!**__",
-                description: `Type in the **name** of __one__ role you would like to delete from the <@&${selectedDimensionID}> dimension™.`,
+                description: `Type in the **number** of __one__ role you would like to delete from the <@&${selectedDimensionID}> dimension™.`,
             },
             {
                 title: "__**Delete Dimension™ Roles!**__",
-                description: `Your response needs to be the **exactly** the name of the role (The white text over the role mention).`,
+                description: `Your response needs to be the **number** next to the name of the role.`,
             },
         );
         if(selectedRole === false) {return false}

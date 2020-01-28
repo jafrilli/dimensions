@@ -337,11 +337,11 @@ async function createRole(msg, client, args, officerDimension) {
         officerDimension,
         {
             title: "__**New Dimension™ Role: Placement**__",
-            description: "Type the __**name**__ of the role the new role should be placed under. By that logic, you can't place roles higher than the officer role."
+            description: "Type the __**number**__ of the role the new role should be placed under. By that logic, you can't place roles higher than the officer role."
         },
         {
             title: "__**New Dimension™ Role: Placement**__",
-            description: "Invalid input! You should type the __**name**__ of one of these roles the new role should be placed under. By that logic, you can't place roles higher than the officer role."
+            description: "Invalid input! You should type the __**number**__ of one of these roles the new role should be placed under. By that logic, you can't place roles higher than the officer role."
         }
     );
     if(rolePositionObj === false) return msg.channel.send("Ended dimension™ role creation.");
@@ -381,11 +381,11 @@ async function deleteRole(msg, client, args, officerDimension, officerRole) {
         officerDimension,
         {
             title: "__**Remove Dimension™ Role**__",
-            description: `Type the __**name**__ of the role you want to remove from the <@&${officerDimension}> dimension™. You obviously cannot delete the officer role, even though it's on the list.`
+            description: `Type the __**number**__ of the role you want to remove from the <@&${officerDimension}> dimension™. You obviously cannot delete the officer role, even though it's on the list.`
         },
         {
             title: "__**Remove Dimension™ Role**__",
-            description: "Type the __**name**__ of the role you want to remove from your dimension™. You obviously cannot delete the officer role, even though it's on the list."
+            description: "Type the __**number**__ of the role you want to remove from your dimension™. You obviously cannot delete the officer role, even though it's on the list."
         }
     );
     if(roleToDelete === false) return msg.channel.send("Ended dimension™ role deletion.");
@@ -410,11 +410,11 @@ async function updateRole(msg, client, args, officerDimension, officerRole) {
         officerDimension,
         {
             title: "__**Update Dimension™ Role: Role**__",
-            description: `Type the __**name**__ of the role you want to update from the <@&${officerDimension}> dimension™. You cannot reposition the officer role, even though it's on the list.`
+            description: `Type the __**number**__ of the role you want to update from the <@&${officerDimension}> dimension™. You cannot reposition the officer role, even though it's on the list.`
         },
         {
             title: "__**Update Dimension™ Role: Role**__",
-            description: "Incorrect input! Type the __**name**__ of the role you want to update from your dimension™. You cannot reposition the officer role, even though it's on the list."
+            description: "Incorrect input! Type the __**number**__ of the role you want to update from your dimension™. You cannot reposition the officer role, even though it's on the list."
         }
     );
     if(roleToUpdate === false) return msg.channel.send("Ended dimension™ role updating.");
@@ -518,11 +518,11 @@ var updateTheRole = {
             officerDimension,
             {
                 title: "__**Update Dimension™ Role: Position**__",
-                description: `Type the __**name**__ of the role you want to place the <@&${roleToUpdate.id}> role under. By that logic, you cannot place a role higher than the officer role.`
+                description: `Type the __**number**__ of the role you want to place the <@&${roleToUpdate.id}> role under. By that logic, you cannot place a role higher than the officer role.`
             },
             {
                 title: "__**Update Dimension™ Role: Position**__",
-                description: `Incorrect input! Type the __**name**__ of the role you want to place the <@&${roleToUpdate.id}> role under. By that logic, you cannot place a role higher than the officer role.`
+                description: `Incorrect input! Type the __**number**__ of the role you want to place the <@&${roleToUpdate.id}> role under. By that logic, you cannot place a role higher than the officer role.`
             }
         );
         if(roleToPlaceUnder === false) return msg.channel.send("Ended dimension™ role updating.");
@@ -572,8 +572,8 @@ async function giveRole(msg, client, args, officerDimension) {
 
     var roleToGive = await wizard.type.positionedDimensionRole(
         msg, client, officerDimension,
-        {title: "**Give Role: Role**", description: "Type in the **exact name** of the role you would like to give <@"+user.id+">."},
-        {title: "**Give Role: Role**", description: "Incorrect response! Type in the **exact name** (CASE-SENSITIVE) of the role you would like to give <@"+user.id+">."},
+        {title: "**Give Role: Role**", description: "Type in the **number** of the role you would like to give <@"+user.id+">."},
+        {title: "**Give Role: Role**", description: "Incorrect response! Type in the **number** next to the role name of the role you would like to give <@"+user.id+">."},
     );
     if(roleToGive === false) return msg.channel.send("Ended the adding role wizard...");
 
@@ -605,8 +605,8 @@ async function removeRole(msg, client, args, officerDimension) {
 
     var roleToRemove = await wizard.type.userDimensionRoles(
         msg, client, officerDimension, user.id, 
-        {title: "Remove Role: Role", description: "Type in the **exact name** of the role you would like to remove from <@"+user.id+">."},
-        {title: "Remove Role: Role", description: "Incorrect response! Type in the **exact name** (CASE-SENSITIVE) of the role you would like to remove from <@"+user.id+">."}
+        {title: "Remove Role: Role", description: "Type in the **number** next to the role you would like to remove from <@"+user.id+">."},
+        {title: "Remove Role: Role", description: "Incorrect response! Type in the **number** next to the role you would like to remove from <@"+user.id+">."}
     );
     if(roleToRemove === false) return msg.channel.send("Ended the removing role wizard...");
 
