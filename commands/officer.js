@@ -426,6 +426,7 @@ async function updateRole(msg, client, args, officerDimension, officerRole) {
         "color",
         "position",
         "hoist",
+        "mention"
         // "password",
         // "officer"
     ]
@@ -443,6 +444,7 @@ async function updateRole(msg, client, args, officerDimension, officerRole) {
                 {name: "Color", value: "Color of the role", inline: true},
                 {name: "Position", value: "Position of the role (allows you to reposition it)", inline: true},
                 {name: "Hoist", value: "Toggle whether the role is hoisted or not", inline: true},
+                {name: "Mention", value: "Toggle whether the role is mentionable or not", inline: true},
                 // {name: "Password", value: "Password of the dimension™ (not an option during creation)", inline: true},
                 // {name: "Officer", value: "Officer role of the dimension™ (not an option during creation)", inline: true}
             ]
@@ -461,19 +463,18 @@ async function updateRole(msg, client, args, officerDimension, officerRole) {
     switch (whatToUpdateResponse) {
         case "name":
             await updateTheRole.updateName(roleToUpdate, msg, client);
-            // console.log("name")
             break;
         case "color":
             await updateTheRole.updateColor(roleToUpdate, msg, client);
-            // console.log("color")
             break;
         case "position":
             await updateTheRole.updatePosition(roleToUpdate, msg, client, officerDimension);
-            // console.log("emoji")
             break;
         case "hoist": 
             await updateTheRole.updateHoist(roleToUpdate, msg, client);
-            // console.log("graphic")
+            break;
+        case "mention":
+            await updateTheRole.updateMentionable(roleToUpdate, msg, client);
             break;
         default: 
             console.log("super weird error. you should literally never get this. like ever. mod role")
@@ -552,6 +553,22 @@ var updateTheRole = {
         } catch (err) {return functions.embed.errors.catch(err, client)}
         return msg.channel.send(`Successfully set hoist for the <@&${selectedRole.id}> role to ${shouldHoist}!`)
     },
+    updateMentionable: async (roleToUpdate, msg, client) => {
+        var shouldMentionable = await wizard.type.yesno(
+            msg, client, false, false, 
+            {title: "__**Update Dimension™ Role: Mentionability**__", description: "Do you want the members to be able to mention the role? Enter \'yes\' or \'no\':"},
+            {title: "__**Update Dimension™ Role: Mentionability**__", description: "Your answer **must** be either \'yes\' or \'no\'. Do you want the members to be able to mention this role?:"}
+        );
+        if(shouldMentionable === false) return msg.channel.send("Ended dimension™ role updating.")
+        shouldMentionable = shouldMentionable.toLowerCase() == 'yes' ? true : false;
+
+        var selectedRole = client.guilds.get(botSettings.guild).roles.get(roleToUpdate.id);
+
+        try {
+            await selectedRole.edit({mentionable: shouldMentionable});
+        } catch (err) {return functions.embed.errors.catch(err, client)}
+        return msg.channel.send(`Successfully set mentionability for the <@&${selectedRole.id}> role to ${shouldMentionable}!`)
+    }
 }
 async function giveRole(msg, client, args, officerDimension) {
 
