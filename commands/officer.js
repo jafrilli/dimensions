@@ -48,6 +48,10 @@ module.exports.run = async (msg, client, args) => {
             await dimensionUnban(msg, client, args, officerDimension);
             removedID();
             break;
+        case "kick":
+            await dimensionKick(msg, client, args, officerDimension, officerRole);
+            removedID();
+            break;
         case "announce":
             await dimensionAnnouncment(msg, client, args, officerDimension);
             removedID();
@@ -91,7 +95,7 @@ module.exports.help = {
     name: "mod"
 }
 
-// ban series
+// ban & kick series
 async function dimensionBan(msg, client, args, officerDimension, officerRole) {
     var errorMsg = `Please mention the user you want to ban from <@&${officerDimension}> after the command. EX: \'>manage ban @someone\'`
     if(msg.mentions.users.size < 1) return msg.channel.send(errorMsg);
@@ -107,13 +111,17 @@ async function dimensionBan(msg, client, args, officerDimension, officerRole) {
         userToBan,
         // replace with an error embed
         (err) => {console.log("could not ban user | err: " + err); msg.channel.send("could not ban user. contact admin + developer asap ;-;")},
-        (doc) => {
+        async (doc) => {
             msg.channel.send(`Banned <@${userToBan}> from the <@&${officerDimension}> dimension!`)
             //! KICK THE USER OUT OF THE DIMENSION (MUST MANUALLY TELEPORT)
+            var success = await kick(msg, client, userToBan, officerDimension);
+            if(success) return msg.channel.send(`Successfully kicked <@${userToBan}> from <@&${officerDimension}>!`)
+            else {msg.channel.send(`Banned <@${userToBan}> from the <@&${officerDimension}>, but could not complete the kicking process for some reason! Contact admin!`)}
         },
         true,
         false
     )
+    
 }
 async function dimensionUnban(msg, client, args, officerDimension) {
     var errorMsg = `Please mention the user you want to unban from <@&${officerDimension}> after the command. EX: \'>manage ban @someone\'`
@@ -132,6 +140,32 @@ async function dimensionUnban(msg, client, args, officerDimension) {
         false,
         true
     )
+}
+async function dimensionKick(msg, client, args, officerDimension, officerRole) {
+    var errorMsg = `Please mention the user you want to kick from <@&${officerDimension}> after the command. EX: \'>mod kick @someone\'`
+    if(msg.mentions.users.size < 1) return msg.channel.send(errorMsg);
+    var userToKick = msg.mentions.users.first().id;
+    if(userToKick == msg.author.id) return msg.channel.send("u cant kick urself dumbass");
+    if(client.guilds.get(botSettings.guild).members.get(userToKick).roles.keyArray().includes(officerRole)) {
+        return msg.channel.send("You can't kick another officer!")
+    }
+    var success = await kick(msg, client, userToKick, officerDimension);
+    if(success) return msg.channel.send(`Successfully kicked <@${userToKick}> from <@&${officerDimension}>!`)
+}
+async function kick(msg, client, userID, officerDimension) {
+    const member = msg.guild.members.get(userID);
+    const roleIDs = member.roles.keyArray();
+    const dimensionRoles = client.cache.dimensions.get(officerDimension).roles;
+    if(!roleIDs.includes(officerDimension)) return false;
+    try {
+        await member.roles.remove(officerDimension);
+        roleIDs.forEach(async roleID => {
+            if(dimensionRoles.includes(roleID)) await member.roles.remove(roleID);
+        });
+    } catch (err) {
+        return functions.embed.errors.catch(err, client);
+    }
+    return true;
 }
 
 // event series
@@ -947,12 +981,13 @@ const rrFunctions = {
 async function modHelp(msg, client, args, officerDimension) {
     const embed = new MessageEmbed({
         title: "__**Mod Commands Help**__",
-        description: "All of these commands __do not__ need arguments (text after them) **EXCEPT BAN & UNBAN**. They are all setup wizards. Type \'quit\' at anytime during the setup wizard to cancel the process (EXCEPT IN THE EMOJI/REACT PHASE. STILL WORKING ON THAT).",
+        description: "All of these commands __do not__ need arguments (text after them) **EXCEPT BAN, UNBAN, and KICK**. They are all setup wizards. Type \'quit\' at anytime during the setup wizard to cancel the process (EXCEPT IN THE EMOJI/REACT PHASE. STILL WORKING ON THAT).",
         fields: [
             {name: ">mod role help", value: `FOR ALL <@&${officerDimension}> ROLE COMMANDS`},
             {name: ">mod rr", value: `FOR ALL <@&${officerDimension}> RR COMMANDS`},
-            {name: ">mod ban <@user>", value: `Bans a member from <@&${officerDimension}>.`},
+            {name: ">mod ban <@user>", value: `Kicks and bans a member from <@&${officerDimension}>.`},
             {name: ">mod unban <@user>", value: `Unbans a member from <@&${officerDimension}>.`},
+            {name: ">mod kick <@user>", value: `Simply kicks a member from <@&${officerDimension}>.`},
             {name: ">mod announce", value: `Takes you through a setup wizard for a <@&${officerDimension}> announcement.`},
             {name: ">mod welcome", value: `Takes you through a setup wizard that helps setup a welcome message for <@&${officerDimension}>.`},
             {name: ">mod toggle welcome", value: `Terminates and deletes the welcome message process for <@&${officerDimension}>.`},
