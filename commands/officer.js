@@ -796,6 +796,7 @@ const rrFunctions = {
             
             if(channel.permissionOverwrites.get(officerRole)) {
                 if(channel.permissionOverwrites.get(officerRole).allow.has(['MANAGE_CHANNELS'])) validChannel = true;
+                else if(msg.member.hasPermission('ADMINISTRATOR')) validChannel = true;
                 else msg.channel.send("The channel you select must be within your control as an officer! Try again!");
                 
             } else {msg.channel.send("The channel you select must be within your control as an officer! Try again!");}
