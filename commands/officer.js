@@ -799,7 +799,9 @@ const rrFunctions = {
                 else if(msg.member.hasPermission('ADMINISTRATOR')) validChannel = true;
                 else msg.channel.send("The channel you select must be within your control as an officer! Try again!");
                 
-            } else {msg.channel.send("The channel you select must be within your control as an officer! Try again!");}
+            } 
+            else if(msg.member.hasPermission('ADMINISTRATOR')) validChannel = true;
+            else {msg.channel.send("The channel you select must be within your control as an officer! Try again!");}
     
         } while(validChannel == false);
     
