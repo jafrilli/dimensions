@@ -123,11 +123,11 @@ async function addRolesWizard(msg, client, args) {
         client,
         {
             title: "__**Dimension™ Role Addition Wizard**__",
-            description: "Type the __**exact name**__ (white text above the role) of the dimension from this list you want to add roles to, or type \'quit\' to stop this process:",
+            description: "Type the __**exact number**__ (white text above the role) of the dimension from this list you want to add roles to, or type \'quit\' to stop this process:",
         },
         {
             title: "__**Dimension™ Role Addition Wizard**__",
-            description: "Incorrect response! Response must be the exact name of one of the dimensions on this list! Try again, or type \'quit\' to stop this process:",
+            description: "Incorrect response! Response must be the exact number of one of the dimensions on this list! Try again, or type \'quit\' to stop this process:",
         },
     );
     if(selectedDimensionID === false) {return false}

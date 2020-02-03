@@ -544,13 +544,16 @@ module.exports.processes = {
             var dmChannel = await user.createDM();
         } catch (e) {
             // make this better
-            console.log(e);
+            return console.log(`Could not create DM channel for user: ${user.id}`);
         }
         var passwordRequestEmbed = await this.embed.dimension.passwordRequest(dimensionID, client)
         await dmChannel.send(passwordRequestEmbed);
-
-        var msgs = await dmChannel.awaitMessages(m => m.content, {max: 1, time: 30000});
-        var enteredPassword = msgs.first().content;
+        try{
+            var msgs = await dmChannel.awaitMessages(m => m.content, {max: 1, time: 15000, errors: ['time']})
+        } catch(err) {
+            dmChannel.send('⏰ You ran out of time (+' + 15 + ' seconds)! Ending wizard...');
+            return false;
+        }
 
         if(enteredPassword == dimension.password) {
             await dmChannel.send("That's the right password! GG");

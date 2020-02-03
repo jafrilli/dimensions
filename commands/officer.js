@@ -20,20 +20,39 @@ module.exports.run = async (msg, client, args) => {
     // 2. sets the officer's dimension to officerDimension
     var officerDimension;
     var officerRole;
-    for(var i = 0; i < client.cache.dimensions.keyArray().length; i++) {
-        var currentDimension = client.cache.dimensions.array()[i];
-        if(currentDimension.officerRole) {
-            if(msg.member.roles.keyArray().includes(currentDimension.officerRole)) {
-                officerDimension = currentDimension["_id"];
-                officerRole = currentDimension.officerRole;
-                break;
+    
+    // * if admin, choose dimension. if not, see if user has an officer role
+    if(msg.member.hasPermission('ADMINISTRATOR')) {
+        var selectedDimensionID = await wizard.type.dimension(
+            msg,
+            client,
+            {
+                title: "__**Mod Commands: Dimension™**__",
+                description: "Type the __**exact number**__ of the dimension from this list you want to perform mod actions to, or type \'quit\' to stop this process:",
+            },
+            {
+                title: "__**Mod Commands: Dimension™**__",
+                description: "Incorrect response! Response must be the exact number of one of the dimensions on this list! Try again, or type \'quit\' to stop this process:",
+            },
+        );
+        if(selectedDimensionID === false) {return false}
+        officerDimension = selectedDimensionID;
+        officerRole = client.cache.dimensions.get(selectedDimensionID).officerRole;
+    } else {
+        for(var i = 0; i < client.cache.dimensions.keyArray().length; i++) {
+            var currentDimension = client.cache.dimensions.array()[i];
+            if(currentDimension.officerRole) {
+                if(msg.member.roles.keyArray().includes(currentDimension.officerRole)) {
+                    officerDimension = currentDimension["_id"];
+                    officerRole = currentDimension.officerRole;
+                    break;
+                }
             }
         }
     }
 
-    if(!officerDimension) return msg.channel.send("You must be an officer to use this command!");
+    if(!officerDimension) return msg.channel.send("You must be an officer or an admin to use this command!");
 
-    
     client.indicators.usingCommand.push(msg.author.id);
     function removedID() {
         client.indicators.usingCommand = client.indicators.usingCommand.filter(user => user != msg.author.id)
@@ -101,8 +120,14 @@ async function dimensionBan(msg, client, args, officerDimension, officerRole) {
     if(msg.mentions.users.size < 1) return msg.channel.send(errorMsg);
     var userToBan = msg.mentions.users.first().id;
     if(userToBan == msg.author.id) return msg.channel.send("u cant ban urself dumbass");
+    // if userToBan is an officer
     if(client.guilds.get(botSettings.guild).members.get(userToBan).roles.keyArray().includes(officerRole)) {
         return msg.channel.send("You can't ban another officer!")
+    }
+    // if userToBan is an admin
+    var member = msg.guild.members.get(userToBan);
+    if(member.hasPermission('ADMINISTRATOR')) {
+        return msg.channel.send('You can\'t ban an admin!');
     }
     await df.dimensionUpdate(
         client, 
@@ -146,8 +171,14 @@ async function dimensionKick(msg, client, args, officerDimension, officerRole) {
     if(msg.mentions.users.size < 1) return msg.channel.send(errorMsg);
     var userToKick = msg.mentions.users.first().id;
     if(userToKick == msg.author.id) return msg.channel.send("u cant kick urself dumbass");
+    // if userToKick is an officer
     if(client.guilds.get(botSettings.guild).members.get(userToKick).roles.keyArray().includes(officerRole)) {
         return msg.channel.send("You can't kick another officer!")
+    }
+    // if userToKick is an admin
+    var member = msg.guild.members.get(userToKick);
+    if(member.hasPermission('ADMINISTRATOR')) {
+        return msg.channel.send('You can\'t kick an admin!');
     }
     var success = await kick(msg, client, userToKick, officerDimension);
     if(success) return msg.channel.send(`Successfully kicked <@${userToKick}> from <@&${officerDimension}>!`)
